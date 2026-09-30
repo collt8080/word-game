@@ -1,0 +1,8 @@
+.env
+__pycache__/
+node_modules/
+raw_data/
+words_import.csv
+words.sqlite3
+*.sqlite3
+*.db

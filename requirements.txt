@@ -1,0 +1,4 @@
+hgtk
+turso_serverless
+six
+python-dotenv

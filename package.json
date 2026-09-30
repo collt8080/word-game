@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "mcp-turso": "^0.2.1"
+  }
+}
