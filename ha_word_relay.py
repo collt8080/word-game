@@ -133,6 +133,8 @@ class TursoWordRelayGame:
                     store_unregistered_word = False
                 else:
                     store_unregistered_word = True
+                if not jev_decision.lexical_item:
+                    return self._mistake(f"{word}은(는) 문장이나 활용형이라 끝말잇기 단어로 사용할 수 없습니다.")
                 if not jev_decision.acceptable:
                     return self._mistake(f"{word}은(는) 끝말잇기에 사용할 수 없는 단어입니다.")
                 if store_unregistered_word:

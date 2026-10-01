@@ -26,6 +26,7 @@ class JevDecision:
     acceptable: bool
     profane: bool
     dialect: bool
+    lexical_item: bool
 
 
 def is_word_chain_acceptable(word, api_key=None):
@@ -52,6 +53,10 @@ def is_word_chain_acceptable(word, api_key=None):
                 "type": "noul",
                 "instructions": "Is this word primarily a Korean regional dialect or dialectal expression rather than standard Korean?",
             },
+            "is_lexical_item": {
+                "type": "noul",
+                "instructions": "Is this input a standalone lexical word or established compound term, rather than a sentence, question, greeting, phrase, or inflected/conjugated form? Korean verb/adjective endings such as 습니까, 합니다, 했어요, 하세요 indicate an inflected form and must be false.",
+            },
         },
     }
     request = Request(
@@ -75,6 +80,7 @@ def is_word_chain_acceptable(word, api_key=None):
         acceptable = float(answers["is_acceptable"]["noul"]) >= 0.5
         profane = float(answers["is_profane"]["noul"]) >= 0.5
         dialect = float(answers["is_dialect"]["noul"]) >= 0.5
+        lexical_item = float(answers["is_lexical_item"]["noul"]) >= 0.5
     except (KeyError, TypeError, ValueError) as error:
         raise JevApiError("Jev API returned an invalid decision.") from error
-    return JevDecision(acceptable, profane, dialect)
+    return JevDecision(acceptable, profane, dialect, lexical_item)
