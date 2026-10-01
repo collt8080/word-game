@@ -384,7 +384,7 @@ class TursoWordStore:
         if difficulty == "상":
             eligible = scored_candidates
         else:
-            bounds = {"중": (4, 6), "하": (11, 13)}[difficulty]
+            bounds = {"중": (4, 9), "하": (11, 19)}[difficulty]
             eligible = [
                 item for item in scored_candidates
                 if bounds[0] <= item[1] <= bounds[1]
