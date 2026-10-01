@@ -71,6 +71,7 @@ class TursoWordRelayGame:
         if word in self.relay.history:
             return self._mistake(f"{word}은(는) 이미 사용한 단어입니다.")
         dictionary_entry = None
+        store_unregistered_word = False
         if not self.store.contains(word):
             try:
                 dictionary_entry = lookup_word(word)
@@ -91,19 +92,26 @@ class TursoWordRelayGame:
                 ).lower() in {"1", "true", "yes", "y"}
                 if jev_decision.profane:
                     return self._mistake(f"{word}은(는) 비속어라서 사용할 수 없습니다.")
-                if jev_decision.dialect and not allow_dialect:
-                    return self._mistake(f"{word}은(는) 방언이라서 사용할 수 없습니다.")
+                if jev_decision.dialect:
+                    if not allow_dialect:
+                        return self._mistake(f"{word}은(는) 방언이라서 사용할 수 없습니다.")
+                    store_unregistered_word = False
+                else:
+                    store_unregistered_word = True
                 if not jev_decision.acceptable:
                     return self._mistake(f"{word}은(는) 끝말잇기에 사용할 수 없는 단어입니다.")
-                self.store.add_word(
-                    word,
-                    word_type="AI승인",
-                    dictionary_registered=False,
-                    registered_by="jev_ai",
-                    notes="Jev AI acceptable probability >= 0.5",
-                )
+                if store_unregistered_word:
+                    self.store.add_word(
+                        word,
+                        word_type="AI승인",
+                        dictionary_registered=False,
+                        registered_by="jev_ai",
+                        notes="Jev AI acceptable probability >= 0.5",
+                    )
 
         if dictionary_entry is not None:
+            if any(label in dictionary_entry.word_type for label in ("비속어", "방언")):
+                return self._mistake(f"{word}은(는) 비속어 또는 방언이라서 사용할 수 없습니다.")
             self.store.add_word(
                 word,
                 word_type=dictionary_entry.word_type,
