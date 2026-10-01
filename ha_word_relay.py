@@ -5,7 +5,42 @@ from korean_word_relay.utils import preprocess_word
 
 from jev_api import JevApiError, is_word_chain_acceptable
 from stdict_api import DictionaryApiError, lookup_word
-from word_store import TursoWordStore
+from word_store import TursoWordStore, dueum_candidates
+
+
+def _format_chain_error(last_word, word):
+    last_char = last_word[-1]
+    dueum_chars = dueum_candidates(last_char)
+
+    def _josa_ro(char):
+        code = ord(char) - 0xAC00
+        return "로" if 0 <= code < 11172 and code % 28 in (0, 8) else "으로"
+
+    def _josa_eun(char):
+        code = ord(char) - 0xAC00
+        return "은" if 0 <= code < 11172 and code % 28 != 0 else "는"
+
+    code = ord(last_char) - 0xAC00
+    has_hangul = 0 <= code < 11172
+
+    if dueum_chars:
+        dueum_text = ", ".join(f"'{c}'" for c in dueum_chars)
+        msg = f"'{last_word}' 다음에는 '{last_char}' 또는 두음법칙에 따라 {dueum_text}{_josa_ro(dueum_chars[-1])} 시작해야 합니다."
+        if has_hangul and code // 588 == 5:
+            vowel = (code % 588) // 28
+            trailing = code % 28
+            wrong_ieung = chr(0xAC00 + (11 * 21 + vowel) * 28 + trailing)
+            if word and word[0] == wrong_ieung:
+                msg += f" (참고: '{last_char}'{_josa_eun(last_char)} 두음법칙상 '{dueum_chars[0]}'{_josa_ro(dueum_chars[0])}만 바뀌며 '{wrong_ieung}'{_josa_ro(wrong_ieung)}는 바뀌지 않습니다.)"
+    else:
+        msg = f"'{last_word}' 다음에는 '{last_char}'{_josa_ro(last_char)} 시작해야 합니다."
+        if has_hangul and code // 588 in (2, 5):
+            vowel = (code % 588) // 28
+            trailing = code % 28
+            wrong_ieung = chr(0xAC00 + (11 * 21 + vowel) * 28 + trailing)
+            if word and word[0] == wrong_ieung:
+                msg += f" (참고: '{last_char}'{_josa_eun(last_char)} 두음법칙상 '{wrong_ieung}'{_josa_ro(wrong_ieung)} 바뀌지 않습니다.)"
+    return msg
 
 
 class TursoWordRelayGame:
@@ -65,9 +100,7 @@ class TursoWordRelayGame:
         if not word:
             return self._mistake("두 글자 이상의 단어를 입력해 주세요.")
         if not self.relay.check_continue(self.last_word, word):
-            return self._mistake(
-                f"{self.last_word} 다음에는 {word}을(를) 말할 수 없습니다."
-            )
+            return self._mistake(_format_chain_error(self.last_word, word))
         if word in self.relay.history:
             return self._mistake(f"{word}은(는) 이미 사용한 단어입니다.")
         dictionary_entry = None
