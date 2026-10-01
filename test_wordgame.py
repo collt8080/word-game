@@ -51,10 +51,10 @@ class WordChainTests(unittest.TestCase):
             store.next_word("자", ["사과", "과자"], difficulty="상"), "자즙"
         )
         self.assertEqual(
-            store.next_word("자", ["사과", "과자"], difficulty="중"), None
+            store.next_word("자", ["사과", "과자"], difficulty="중"), "자동차"
         )
         self.assertEqual(
-            store.next_word("자", ["사과", "과자"], difficulty="하"), "자동차"
+            store.next_word("자", ["사과", "과자"], difficulty="하"), None
         )
         store.close()
 
@@ -62,8 +62,8 @@ class WordChainTests(unittest.TestCase):
         store = TursoWordStore(sqlite3.connect(":memory:"))
         store.initialize()
         words = ["사과", "과자", "자동차", "자즙", "자물", "즙액"]
-        words.extend("차" + chr(0xAC00 + index) for index in range(4))
-        words.extend("물" + chr(0xAC00 + index) for index in range(11))
+        words.extend("차" + chr(0xAC00 + index) for index in range(11))
+        words.extend("물" + chr(0xAC00 + index) for index in range(30))
         store.add_words(words)
         medium = store.next_word("자", ["사과", "과자"], difficulty="중")
         easy = store.next_word("자", ["사과", "과자"], difficulty="하")

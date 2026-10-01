@@ -140,8 +140,8 @@ Difficulty is configured with `WORD_GAME_DIFFICULTY` or the HA service's
 `difficulty` field:
 
 - `상`: choose the candidate with the fewest next words.
-- `중`: choose randomly among candidates with 4-9 next words.
-- `하`: choose randomly among candidates with 11-19 next words.
+- `중`: choose randomly among candidates with 11-19 next words.
+- `하`: choose randomly among candidates with 30-50 next words.
 
 If a requested range has no candidates, the computer has no valid response and
 the player wins that round. It does not select a word outside the requested
