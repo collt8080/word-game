@@ -143,8 +143,9 @@ Difficulty is configured with `WORD_GAME_DIFFICULTY` or the HA service's
 - `중`: choose randomly among candidates with 4-6 next words.
 - `하`: choose randomly among candidates with 11-13 next words.
 
-If a requested range has no candidates, the game falls back to the candidate
-with the fewest next words.
+If a requested range has no candidates, the computer has no valid response and
+the player wins that round. It does not select a word outside the requested
+range.
 `preprocess.py` imports every `.json` file in `raw_data` into Turso and adds the
 game's starting word. It keeps only entries where `word_unit` is `단어`, a
 `pos_info` item has `pos` equal to `명사`, `word_type` is one of `고유어`,

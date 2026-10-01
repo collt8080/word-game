@@ -12,7 +12,7 @@ class WordChainTests(unittest.TestCase):
         self.store = TursoWordStore(sqlite3.connect(":memory:"))
         self.store.initialize()
         self.store.add_words(["사과", "과자", "자동차", "차표", "표범"])
-        self.game = TursoWordRelayGame(self.store, start_word="사과")
+        self.game = TursoWordRelayGame(self.store, start_word="사과", difficulty="상")
         self.game.start()
 
     def tearDown(self):
@@ -33,7 +33,7 @@ class WordChainTests(unittest.TestCase):
         store.add_words([
             "사과", "과자", "자동차", "자즙", "차수", "차량", "즙액",
         ])
-        game = TursoWordRelayGame(store, start_word="사과")
+        game = TursoWordRelayGame(store, start_word="사과", difficulty="상")
         game.start()
         message, game_over = game.submit("과자")
         self.assertFalse(game_over)
@@ -51,7 +51,7 @@ class WordChainTests(unittest.TestCase):
             store.next_word("자", ["사과", "과자"], difficulty="상"), "자즙"
         )
         self.assertEqual(
-            store.next_word("자", ["사과", "과자"], difficulty="중"), "자즙"
+            store.next_word("자", ["사과", "과자"], difficulty="중"), None
         )
         self.assertEqual(
             store.next_word("자", ["사과", "과자"], difficulty="하"), "자동차"
@@ -92,7 +92,7 @@ class WordChainTests(unittest.TestCase):
         store = TursoWordStore(sqlite3.connect(":memory:"))
         store.initialize()
         store.add_words(["사과", "즙액"])
-        game = TursoWordRelayGame(store, start_word="사과")
+        game = TursoWordRelayGame(store, start_word="사과", difficulty="상")
         game.start()
         entry = DictionaryEntry(
             word="과즙",

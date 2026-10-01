@@ -390,11 +390,7 @@ class TursoWordStore:
                 if bounds[0] <= item[1] <= bounds[1]
             ]
             if not eligible:
-                eligible = scored_candidates
-                return min(
-                    eligible,
-                    key=lambda item: (item[1], len(item[0][0]), item[0][0]),
-                )[0][0]
+                return None
             return random.choice(eligible)[0][0]
         return min(
             eligible,
