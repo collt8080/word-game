@@ -2,7 +2,7 @@ import sqlite3
 import unittest
 from unittest.mock import patch
 
-from stdict_api import DictionaryEntry
+from stdict_api import DictionaryEntry, lookup_word
 from word_store import TursoWordStore, dueum_candidates
 from ha_word_relay import TursoWordRelayGame
 
@@ -109,6 +109,35 @@ class WordChainTests(unittest.TestCase):
         self.assertIn("제 단어는 즙액입니다", message)
         self.assertEqual(store.get_word("과즙")["word_type"], "고유어")
         store.close()
+
+    def test_dictionary_api_matches_hyphenated_headword(self):
+        payload = {
+            "channel": {
+                "item": [{
+                    "word": "면치-기",
+                    "pos": "명사",
+                    "sense": {
+                        "definition": "면을 이어 먹는 일.",
+                        "type": "일반어",
+                        "link": "https://stdict.korean.go.kr/example",
+                    },
+                }]
+            }
+        }
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def read(self):
+                import json
+                return json.dumps(payload).encode("utf-8")
+
+        with patch("stdict_api.urlopen", return_value=FakeResponse()):
+            entry = lookup_word("면치기", api_key="test-key")
+        self.assertEqual(entry.word, "면치-기")
 
     def test_rejects_unknown_word(self):
         with patch("ha_word_relay.lookup_word", return_value=None):

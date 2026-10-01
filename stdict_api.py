@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from dataclasses import dataclass
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -21,6 +22,10 @@ class DictionaryEntry:
     link: str
 
 
+def _comparable_word(word):
+    return re.sub(r"[^가-힣ㄱ-ㅎㅏ-ㅣ]", "", word or "")
+
+
 def _first(value):
     if isinstance(value, list):
         return value[0] if value else {}
@@ -37,7 +42,7 @@ def lookup_word(word, api_key=None):
             "key": api_key,
             "q": word,
             "req_type": "json",
-            "method": "exact",
+            "method": "include",
             "type1": "word",
             "pos": "1",
             "num": "10",
@@ -62,7 +67,14 @@ def lookup_word(word, api_key=None):
     items = payload.get("channel", {}).get("item", [])
     if isinstance(items, dict):
         items = [items]
-    exact_item = next((item for item in items if item.get("word") == word), None)
+    comparable_word = _comparable_word(word)
+    exact_item = next(
+        (
+            item for item in items
+            if _comparable_word(item.get("word")) == comparable_word
+        ),
+        None,
+    )
     if exact_item is None:
         return None
 
