@@ -78,6 +78,9 @@ class TursoWordRelayGame:
 
     def submit(self, user_word):
         word = normalize_player_word(user_word)
+        if word and "없어나졌어" in word:
+            self.active = False
+            return "알겠어요. 포기한다고 했으니 게임을 끝낼게요. 이번 판은 제가 이겼어요!", True
         if not word:
             return self._mistake("두 글자 이상인 낱말을 말해 주세요.")
         if not self.relay.can_follow(self.last_word, word):
