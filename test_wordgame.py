@@ -82,8 +82,9 @@ class WordChainTests(unittest.TestCase):
         with patch("ha_word_relay.lookup_word", return_value=entry):
             message, game_over = game.submit("과즙")
         self.assertFalse(game_over)
-        self.assertIn("과일에서 짜낸 즙", message)
-        self.assertIn("https://stdict.korean.go.kr/example", message)
+        self.assertNotIn("과일에서 짜낸 즙", message)
+        self.assertNotIn("https://stdict.korean.go.kr/example", message)
+        self.assertIn("제 단어는 즙액입니다", message)
         self.assertEqual(store.get_word("과즙")["word_type"], "고유어")
         store.close()
 

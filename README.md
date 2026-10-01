@@ -194,8 +194,9 @@ STDICT_API_KEY=your-stdict-api-key
 ```
 
 An exact noun match is saved to Turso with its definition, type, and dictionary
-link, then included in the spoken game response. If the API is unavailable, the
-game asks the player to retry instead of treating the word as a loss.
+link, but those details are not spoken during the game. If the API is
+unavailable, the game asks the player to retry instead of treating the word as a
+loss.
 
 The VS Code MCP configuration in `.vscode/mcp.json` connects to Turso Cloud's
 official MCP server. Authorize it through the OAuth prompt in VS Code. This MCP

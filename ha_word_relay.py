@@ -75,20 +75,12 @@ class TursoWordRelayGame:
             )
         self.relay.add_history(word)
         next_word = self.relay.get_next(word)
-        dictionary_message = ""
-        if dictionary_entry is not None:
-            dictionary_message = (
-                f" 표준국어대사전 확인: {dictionary_entry.definition} "
-                f"유형은 {dictionary_entry.word_type}, 품사는 {dictionary_entry.part_of_speech}입니다."
-            )
-            if dictionary_entry.link:
-                dictionary_message += f" 자세히 보기: {dictionary_entry.link}"
         if not next_word:
             self.active = False
-            return f"{word}!{dictionary_message} 제가 이어갈 단어가 없네요. 당신이 이겼습니다!", True
+            return f"{word}! 제가 이어갈 단어가 없네요. 당신이 이겼습니다!", True
 
         self.last_word = next_word
-        return f"{word}!{dictionary_message} 제 단어는 {next_word}입니다. '{next_word[-1]}'(으)로 시작해 주세요.", False
+        return f"{word}! 제 단어는 {next_word}입니다. '{next_word[-1]}'(으)로 시작해 주세요.", False
 
     def close(self):
         self.store.close()
