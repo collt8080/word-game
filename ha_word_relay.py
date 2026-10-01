@@ -110,8 +110,6 @@ class TursoWordRelayGame:
                     )
 
         if dictionary_entry is not None:
-            if any(label in dictionary_entry.word_type for label in ("비속어", "방언")):
-                return self._mistake(f"{word}은(는) 비속어 또는 방언이라서 사용할 수 없습니다.")
             self.store.add_word(
                 word,
                 word_type=dictionary_entry.word_type,

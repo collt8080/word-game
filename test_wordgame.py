@@ -152,10 +152,10 @@ class WordChainTests(unittest.TestCase):
         self.assertIn("비속어", message)
         store.close()
 
-    def test_dictionary_dialect_is_not_saved(self):
+    def test_dictionary_registered_dialect_is_saved(self):
         store = TursoWordStore(sqlite3.connect(":memory:"))
         store.initialize()
-        store.add_word("사과")
+        store.add_words(["사과", "즙액"])
         game = TursoWordRelayGame(store, start_word="사과", difficulty="상")
         game.start()
         dialect_entry = DictionaryEntry(
@@ -168,8 +168,10 @@ class WordChainTests(unittest.TestCase):
         with patch("ha_word_relay.lookup_word", return_value=dialect_entry):
             message, game_over = game.submit("과즙")
         self.assertFalse(game_over)
-        self.assertIsNone(store.get_word("과즙"))
-        self.assertIn("방언", message)
+        metadata = store.get_word("과즙")
+        self.assertTrue(metadata["dictionary_registered"])
+        self.assertEqual(metadata["word_type"], "방언")
+        self.assertIn("제 단어는 즙액입니다", message)
         store.close()
 
     def test_dictionary_api_matches_hyphenated_headword(self):
