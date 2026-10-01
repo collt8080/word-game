@@ -36,9 +36,9 @@ def dueum_candidates(char):
 
     if leading == 5:
         candidates.append(2)
-        if vowel in {2, 6, 7, 12, 17, 20}:
+        if vowel in {2, 3, 6, 7, 12, 17, 20}:
             candidates.append(11)
-    elif leading == 2 and vowel in {2, 6, 7, 12, 17, 20}:
+    elif leading == 2 and vowel in {2, 3, 6, 7, 12, 17, 20}:
         candidates.append(11)
 
     if not candidates:

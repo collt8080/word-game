@@ -37,7 +37,7 @@ def words2dict(word_list, word_dict):
 
 
 def dueum(char):
-    DU_MO = ['ㅣ', 'ㅑ', 'ㅕ', 'ㅛ', 'ㅠ', 'ㅖ']
+    DU_MO = ['ㅣ', 'ㅑ', 'ㅒ', 'ㅕ', 'ㅖ', 'ㅛ', 'ㅠ']
     if not checker.is_hangul(char):
         return None
     ja = letter.decompose(char)
