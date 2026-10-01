@@ -55,6 +55,8 @@ STORE_JEV_APPROVED_WORDS=false
 `JEV_ACCEPT_THRESHOLD`는 미등재 단어 허용 점수 기준(0~1)이며 기본값은 0.6입니다.
 `STORE_JEV_APPROVED_WORDS`가 `false`이면 Jev가 허용한 단어도 DB에 저장하지 않습니다.
 
+`pyproject.toml`은 Python 패키지 빌드/설치용 설정입니다. Home Assistant Pyscript는 wheel 설치만으로 서비스를 등록하지 않으므로, 아래 소스 파일을 Pyscript 스크립트 폴더에 배치해야 합니다.
+
 ---
 
 ## 실행 방법
@@ -72,7 +74,7 @@ python .\ha_word_relay.py
    - `word_store.py`
    - `stdict_api.py`
    - `jev_api.py`
-  - `turso_word_chain/` 폴더 전체
+    - `turso_word_chain/` 폴더 전체
 2. HA Pyscript 환경에 `turso_serverless` 패키지를 설치하고, `.env` 값은 HA 환경변수로 설정합니다.
 3. `ha_word_relay.py` 상단의 TTS 엔진 및 스피커 엔티티 ID를 본인 환경에 맞게 수정합니다:
    - `entity_id="tts.piper"`
