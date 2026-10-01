@@ -2,8 +2,18 @@ import json
 import os
 import re
 from dataclasses import dataclass
+from importlib import import_module
+from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+
+try:
+    load_dotenv = getattr(import_module("dotenv"), "load_dotenv", None)
+except ImportError:
+    load_dotenv = None
+
+if load_dotenv is not None:
+    load_dotenv(Path(__file__).with_name(".env"))
 
 
 API_URL = "https://stdict.korean.go.kr/api/search.do"
