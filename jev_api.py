@@ -1,5 +1,6 @@
 import json
 import os
+from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -20,6 +21,13 @@ class JevApiError(RuntimeError):
     pass
 
 
+@dataclass(frozen=True)
+class JevDecision:
+    acceptable: bool
+    profane: bool
+    dialect: bool
+
+
 def is_word_chain_acceptable(word, api_key=None):
     api_key = api_key or os.getenv("JEV_API_KEY")
     if not api_key:
@@ -34,8 +42,16 @@ def is_word_chain_acceptable(word, api_key=None):
         "questions": {
             "is_acceptable": {
                 "type": "noul",
-                "instructions": "Would Korean speakers reasonably accept this as a usable word or established term in a social Korean word-chain game? Return true for established technical, scientific, product, or commonly used terms; return false for typos, random strings, or clearly invalid forms.",
-            }
+                "instructions": "Would Korean speakers reasonably accept this as a usable word or established term in a social Korean word-chain game? Return true for established technical, scientific, product, or commonly used terms; return false for typos, random strings, or clearly invalid forms. Do not use this field to decide profanity or dialect.",
+            },
+            "is_profane": {
+                "type": "noul",
+                "instructions": "Is this Korean word vulgar, obscene, abusive, or profanity?",
+            },
+            "is_dialect": {
+                "type": "noul",
+                "instructions": "Is this word primarily a Korean regional dialect or dialectal expression rather than standard Korean?",
+            },
         },
     }
     request = Request(
@@ -55,7 +71,10 @@ def is_word_chain_acceptable(word, api_key=None):
         raise JevApiError(f"Jev API request failed: {error}") from error
 
     try:
-        probability = float(payload["answers"]["is_acceptable"]["noul"])
+        answers = payload["answers"]
+        acceptable = float(answers["is_acceptable"]["noul"]) >= 0.5
+        profane = float(answers["is_profane"]["noul"]) >= 0.5
+        dialect = float(answers["is_dialect"]["noul"]) >= 0.5
     except (KeyError, TypeError, ValueError) as error:
         raise JevApiError("Jev API returned an invalid decision.") from error
-    return probability >= 0.5
+    return JevDecision(acceptable, profane, dialect)

@@ -83,10 +83,17 @@ class TursoWordRelayGame:
                 if not allow_unregistered:
                     return self._mistake(f"{word}은(는) DB와 표준국어대사전에 없습니다.")
                 try:
-                    jev_accepted = is_word_chain_acceptable(word)
+                    jev_decision = is_word_chain_acceptable(word)
                 except JevApiError:
                     return f"{word}은(는) DB에 없습니다. Jev AI를 확인할 수 없으니 다시 시도해 주세요.", False
-                if not jev_accepted:
+                allow_dialect = os.getenv(
+                    "ALLOW_DIALECT_WORDS", "false"
+                ).lower() in {"1", "true", "yes", "y"}
+                if jev_decision.profane:
+                    return self._mistake(f"{word}은(는) 비속어라서 사용할 수 없습니다.")
+                if jev_decision.dialect and not allow_dialect:
+                    return self._mistake(f"{word}은(는) 방언이라서 사용할 수 없습니다.")
+                if not jev_decision.acceptable:
                     return self._mistake(f"{word}은(는) 끝말잇기에 사용할 수 없는 단어입니다.")
                 self.store.add_word(
                     word,

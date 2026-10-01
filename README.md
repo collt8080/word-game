@@ -215,13 +215,15 @@ enable the Jev AI fallback in the local `.env` file:
 ```env
 ALLOW_UNREGISTERED_WORDS=true
 JEV_API_KEY=your-jev-api-key
+ALLOW_DIALECT_WORDS=false
 ```
 
 Jev receives a structured yes/no question about whether the term is an
 established word or technical term suitable for a social Korean word-chain
 game. A probability of 0.5 or higher allows the word, which is saved with
 `dictionary_registered=0` and `registered_by=jev_ai`. The Jev decision details
-are not spoken during the game.
+are not spoken during the game. Profanity is always rejected. Dialect words are
+rejected by default and can only be allowed with `ALLOW_DIALECT_WORDS=true`.
 
 The VS Code MCP configuration in `.vscode/mcp.json` connects to Turso Cloud's
 official MCP server. Authorize it through the OAuth prompt in VS Code. This MCP

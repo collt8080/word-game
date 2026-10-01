@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from stdict_api import DictionaryEntry, lookup_word
+from jev_api import JevDecision
 from word_store import TursoWordStore, dueum_candidates
 from ha_word_relay import TursoWordRelayGame
 
@@ -118,13 +119,37 @@ class WordChainTests(unittest.TestCase):
         game.start()
         with patch.dict("os.environ", {"ALLOW_UNREGISTERED_WORDS": "true"}):
             with patch("ha_word_relay.lookup_word", return_value=None):
-                with patch("ha_word_relay.is_word_chain_acceptable", return_value=True):
+                with patch(
+                    "ha_word_relay.is_word_chain_acceptable",
+                    return_value=JevDecision(True, False, False),
+                ):
                     message, game_over = game.submit("과즙")
         self.assertFalse(game_over)
         self.assertIn("제 단어는 즙액입니다", message)
         metadata = store.get_word("과즙")
         self.assertFalse(metadata["dictionary_registered"])
         self.assertEqual(metadata["registered_by"], "jev_ai")
+        store.close()
+
+    def test_jev_blocks_profanity_and_dialect_by_default(self):
+        store = TursoWordStore(sqlite3.connect(":memory:"))
+        store.initialize()
+        store.add_word("사과")
+        game = TursoWordRelayGame(store, start_word="사과", difficulty="상")
+        game.start()
+        with patch.dict(
+            "os.environ",
+            {"ALLOW_UNREGISTERED_WORDS": "true", "ALLOW_DIALECT_WORDS": "false"},
+            clear=False,
+        ):
+            with patch("ha_word_relay.lookup_word", return_value=None):
+                with patch(
+                    "ha_word_relay.is_word_chain_acceptable",
+                    return_value=JevDecision(True, True, False),
+                ):
+                    message, game_over = game.submit("과즙")
+        self.assertFalse(game_over)
+        self.assertIn("비속어", message)
         store.close()
 
     def test_dictionary_api_matches_hyphenated_headword(self):
@@ -158,11 +183,19 @@ class WordChainTests(unittest.TestCase):
 
     def test_rejects_unknown_word(self):
         with patch("ha_word_relay.lookup_word", return_value=None):
-            message, game_over = self.game.submit("과자아")
+            with patch(
+                "ha_word_relay.is_word_chain_acceptable",
+                return_value=JevDecision(False, False, False),
+            ):
+                message, game_over = self.game.submit("과자아")
         self.assertFalse(game_over)
-        self.assertIn("표준국어대사전에 없습니다", message)
+        self.assertIn("끝말잇기에 사용할 수 없는 단어", message)
         with patch("ha_word_relay.lookup_word", return_value=None):
-            message, game_over = self.game.submit("과자아")
+            with patch(
+                "ha_word_relay.is_word_chain_acceptable",
+                return_value=JevDecision(False, False, False),
+            ):
+                message, game_over = self.game.submit("과자아")
         self.assertTrue(game_over)
         self.assertIn("두 번 틀렸습니다", message)
 
