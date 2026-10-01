@@ -8,8 +8,8 @@ def preprocess_word(word):
     if not word:
         return None
     word = word.strip()
-    word = re.sub('\W+', '', word)
-    word = re.sub('\d', '', word)
+    word = re.sub(r'\W+', '', word)
+    word = re.sub(r'\d', '', word)
     if len(word) < 2:
         return None
     return word
@@ -37,7 +37,7 @@ def words2dict(word_list, word_dict):
 
 
 def dueum(char):
-    DU_MO = ['ㅣ', 'ㅑ', 'ㅕ', 'ㅛ', 'ㅠ']
+    DU_MO = ['ㅣ', 'ㅑ', 'ㅕ', 'ㅛ', 'ㅠ', 'ㅖ']
     if not checker.is_hangul(char):
         return None
     ja = letter.decompose(char)
