@@ -49,7 +49,6 @@ class TursoWordRelayGame:
         self.store.initialize()
         self.difficulty = difficulty or os.getenv("WORD_GAME_DIFFICULTY", "상")
         self.relay = WordRelay(
-            import_default=False,
             use_dueum=True,
             debug_print=False,
             word_store=self.store,

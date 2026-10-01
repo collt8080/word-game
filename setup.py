@@ -26,7 +26,4 @@ setup(
     long_description_content_type='text/markdown',
     packages=['korean_word_relay'],
     install_requires=reqs,
-    package_data={
-      '': ['data/*']
-    }
 )

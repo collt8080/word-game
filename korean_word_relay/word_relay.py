@@ -10,7 +10,6 @@ err_code = {
 class WordRelay:
     def __init__(
         self,
-        import_default=True,
         words_path=None,
         use_dueum=True,
         debug_print=True,
@@ -22,10 +21,6 @@ class WordRelay:
         self.word_store = word_store
         self.difficulty = difficulty
         word_dict = {}
-        if import_default and word_store is None:
-            default_words_path = f'{installpath}/data/korean5800.txt'
-            words = load_words_from_txt(default_words_path)
-            word_dict = words2dict(words, word_dict)
         if words_path:
             words = load_words_from_txt(words_path)
             word_dict = words2dict(words, word_dict)
