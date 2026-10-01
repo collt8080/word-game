@@ -386,7 +386,10 @@ class TursoWordStore:
         ]
         if not eligible:
             eligible = scored_candidates
-        return min(eligible, key=lambda item: (item[1], item[0][0]))[0][0]
+        return min(
+            eligible,
+            key=lambda item: (item[1], len(item[0][0]), item[0][0]),
+        )[0][0]
 
     def close(self):
         self.connection.close()

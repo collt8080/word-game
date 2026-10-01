@@ -56,6 +56,14 @@ class WordChainTests(unittest.TestCase):
         )
         store.close()
 
+    def test_equal_branch_counts_choose_shorter_word(self):
+        store = TursoWordStore(sqlite3.connect(":memory:"))
+        store.initialize()
+        store.add_words(["사과", "과자", "자동차", "자원", "차표", "원칙"])
+        selected = store.next_word("자", ["사과", "과자"], difficulty="상")
+        self.assertEqual(selected, "자원")
+        store.close()
+
     def test_rejects_unknown_word(self):
         message, game_over = self.game.submit("과자아")
         self.assertTrue(game_over)
