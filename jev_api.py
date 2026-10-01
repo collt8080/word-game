@@ -33,6 +33,12 @@ def is_word_chain_acceptable(word, api_key=None):
     api_key = api_key or os.getenv("JEV_API_KEY")
     if not api_key:
         raise JevApiError("JEV_API_KEY is not configured.")
+    try:
+        accept_threshold = float(os.getenv("JEV_ACCEPT_THRESHOLD", "0.6").strip())
+    except ValueError as error:
+        raise JevApiError("JEV_ACCEPT_THRESHOLD must be a number from 0 to 1.") from error
+    if not 0 <= accept_threshold <= 1:
+        raise JevApiError("JEV_ACCEPT_THRESHOLD must be a number from 0 to 1.")
 
     body = {
         "state": {
@@ -77,7 +83,7 @@ def is_word_chain_acceptable(word, api_key=None):
 
     try:
         answers = payload["answers"]
-        acceptable = float(answers["is_acceptable"]["noul"]) >= 0.6
+        acceptable = float(answers["is_acceptable"]["noul"]) >= accept_threshold
         profane = float(answers["is_profane"]["noul"]) >= 0.5
         dialect = float(answers["is_dialect"]["noul"]) >= 0.5
         lexical_item = float(answers["is_lexical_item"]["noul"]) >= 0.5

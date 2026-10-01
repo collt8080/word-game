@@ -47,7 +47,12 @@ STDICT_API_KEY=your-stdict-api-key
 ALLOW_UNREGISTERED_WORDS=true
 JEV_API_KEY=your-jev-api-key
 ALLOW_DIALECT_WORDS=false
+JEV_ACCEPT_THRESHOLD=0.6
+STORE_JEV_APPROVED_WORDS=false
 ```
+
+`JEV_ACCEPT_THRESHOLD`는 미등재 단어 허용 점수 기준(0~1)이며 기본값은 0.6입니다.
+`STORE_JEV_APPROVED_WORDS`가 `false`이면 Jev가 허용한 단어도 DB에 저장하지 않습니다.
 
 ---
 
