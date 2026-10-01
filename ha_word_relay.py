@@ -73,10 +73,8 @@ class TursoWordRelayGame:
                 "DB에 다음 단어가 30개 이상인 두 글자 시작 단어가 없습니다."
             )
         if not self.store.contains(selected_start_word):
-            self.store.add_word(
-                selected_start_word,
-                registered_by="game_start",
-                notes="게임 시작 단어",
+            raise RuntimeError(
+                f"시작 단어 '{selected_start_word}'가 DB에 없어 게임을 시작할 수 없습니다."
             )
         self.relay.reset()
         self.relay.add_history(selected_start_word)
@@ -137,6 +135,7 @@ class TursoWordRelayGame:
                     return self._mistake(f"{word}은(는) 문장이나 활용형이라 끝말잇기 단어로 사용할 수 없습니다.")
                 store_unregistered_word = (
                     not jev_decision.dialect
+                    and jev_decision.noun
                     and os.getenv("STORE_JEV_APPROVED_WORDS", "false").strip().lower()
                     in {"1", "true", "yes", "y"}
                 )
@@ -156,13 +155,19 @@ class TursoWordRelayGame:
                 word_source = "dictionary"
 
         if dictionary_entry is not None:
-            self.store.add_word(
-                word,
-                word_type=dictionary_entry.word_type,
-                dictionary_registered=True,
-                registered_by="stdict_api",
-                notes=dictionary_entry.definition,
-            )
+            entry_category = dictionary_entry.word_type or ""
+            if (
+                dictionary_entry.part_of_speech == "명사"
+                and "방언" not in entry_category
+                and "비속어" not in entry_category
+            ):
+                self.store.add_word(
+                    word,
+                    word_type=entry_category,
+                    dictionary_registered=True,
+                    registered_by="stdict_api",
+                    notes=dictionary_entry.definition,
+                )
         self.relay.add_history(word)
         next_word = self.relay.get_next(word)
         if not next_word:

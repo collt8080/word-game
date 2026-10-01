@@ -27,6 +27,7 @@ class JevDecision:
     profane: bool
     dialect: bool
     lexical_item: bool
+    noun: bool
 
 
 def is_word_chain_acceptable(word, api_key=None):
@@ -63,6 +64,10 @@ def is_word_chain_acceptable(word, api_key=None):
                 "type": "noul",
                 "instructions": "이 입력은 문장, 질문, 인사말, 구(phrase), 용언의 활용형이 아니라 독립된 단어 또는 굳어진 합성 전문 용어입니까? '습니까', '합니다', '했어요', '하세요' 같은 동사·형용사 어미로 끝나는 표현은 거짓으로 답하십시오.",
             },
+            "is_noun": {
+                "type": "noul",
+                "instructions": "이 표제어는 한국어 명사입니까? 활용형, 어근, 부사, 어미, 조사 등 명사가 아닌 품사는 거짓으로 답하십시오.",
+            },
         },
     }
     request = Request(
@@ -87,6 +92,7 @@ def is_word_chain_acceptable(word, api_key=None):
         profane = float(answers["is_profane"]["noul"]) >= 0.5
         dialect = float(answers["is_dialect"]["noul"]) >= 0.5
         lexical_item = float(answers["is_lexical_item"]["noul"]) >= 0.5
+        noun = float(answers["is_noun"]["noul"]) >= 0.5
     except (KeyError, TypeError, ValueError) as error:
         raise JevApiError("Jev API returned an invalid decision.") from error
-    return JevDecision(acceptable, profane, dialect, lexical_item)
+    return JevDecision(acceptable, profane, dialect, lexical_item, noun)
