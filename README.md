@@ -1,187 +1,104 @@
-# korean-word-relay
-### 끝말잇기 package for python 
-* 한국어 낱말 게임 끝말잇기를 쉽게 커스터마이징 할 수 있는 패키지
-* 모델이 사용할 끝말잇기 단어 직접 선택 (난이도 조절 가능)
-* 두음법칙 적용 (여부 선택)
-* 이전 단어와 이어지지 않거나 이미 나왔던 단어 입력시 패배
+# 한국어 끝말잇기 (Home Assistant & 로컬 연동)
 
+Turso DB 및 국립국어원 표준국어대사전 Open API, TypeSafe Jev AI를 연동한 한국어 끝말잇기 게임입니다.  
+Home Assistant(Pyscript) 음성 게임과 로컬 터미널 테스트를 모두 지원합니다.
 
-## Installation
-Using `pip`:
-```
-pip install korean-word-relay
-```
+---
 
-## Usage
-### Quick Start
-```python
-from korean_word_relay import WordRelay
+## 주요 기능
+- **Turso Cloud DB 기반**: 파일 대신 클라우드 DB의 단어를 조회하여 끝말잇기 진행
+- **두음법칙 완벽 지원**: `ㄹ → ㄴ`, `ㄹ → ㅇ`, `ㄴ → ㅇ` 등 두음법칙 자동 계산
+- **난이도 조절 (상 / 중 / 하)**:
+  - **상**: 컴퓨터가 다음 이어질 단어 수가 가장 적은 단어(공격적)를 우선 선택 (동률 시 짧은 글자 우선)
+  - **중**: 다음 이어질 단어 수가 11~19개인 단어 중 랜덤 선택
+  - **하**: 다음 이어질 단어 수가 30~50개인 단어 중 랜덤 선택 (해당 범위 없으면 플레이어 승리)
+- **랜덤 시작 단어**: DB에서 다음 이어갈 수 있는 단어가 30개 이상인 2글자 단어로 매 판 자동 시작
+- **표준국어대사전 Open API 연동**: DB에 없는 단어를 플레이어가 입력 시 국립국어원 API로 실시간 검증 후 DB 자동 등록
+- **Jev AI 미등재어/신조어 판정**:
+  - 국어사전에 없더라도 화학물질, 전문용어 등 사회 통념상 허용할 단어인지 Jev AI로 판정 (50% 이상 찬성 시 허용 및 `dictionary_registered=0` 등록)
+  - **비속어는 무조건 차단**
+  - **방언은 옵션(`ALLOW_DIALECT_WORDS`)으로 제어** (사전 정식 등재 방언은 인정)
+- **2회 기회 규칙**: 틀려도 1회는 기회를 다시 주며, 2회 틀렸을 때 패배
 
-word_relay = WordRelay()
-word_relay.play()
-```
-### result
-```
---------------끝말잇기----------------
-시작 단어: 파이썬
-<< 썬샤인
->> 인간
-<< 간택
->> 택시
-<< 시리
->> 리그
-<< 그대
->> 대략
-<< 약관
->> 관람
-<< 람보
->> 보도
-<< 도로묵
-------------------------------
-no word to answer
-YOU WIN!
-```
-<hr/>
+---
 
-### Default optional parameter
-```python
-word_relay = WordRelay(import_default=True, words_path=None, use_dueum=True, debug_print=True):
-)
-```
-- import_default(boolean): If True, import candidates of korean words from ['자주 쓰이는 한국어 낱말 모음 5800'](https://ko.wiktionary.org/wiki/%EB%B6%80%EB%A1%9D:%EC%9E%90%EC%A3%BC_%EC%93%B0%EC%9D%B4%EB%8A%94_%ED%95%9C%EA%B5%AD%EC%96%B4_%EB%82%B1%EB%A7%90_5800)
-- `words_path(None|string)`: If given path(.txt), import candidates of words list from txt file
-- `use_dueum(boolean)`: If True, 두음법칙 is allowed
-- `debug_print(boolean)`: If True, print warning message on console
+## 설치 및 준비
 
-### Example format for words_path
-`words_path` should be `None` or **list of korean words in txt extension**. For instance, `word_list.txt` should be
-```
-사랑
-우정
-믿음
-.
-.
-여자친구
-```
-If you want to make game much difficult, get `killing_words.txt` from [here](https://github.com/5yearsKim/korean_word_relay/blob/main/raw_data/killing_words.txt).
-
-<hr/>
-
-###  Methods of WordRelay
-
-```python
-word_relay = WordRelay()
-
-# 주어진 낱말에 이어지는 단어 리턴
-# set log_history=False if you don't want to add word in history
-next_word = word_relay.get_next('성질') # next_word is None or 질X (예: 질문)
-
-# 두 낱말이 이어지는지 여부 체크
-is_continue = word_relay.check_continue('질문', '문지기') # is_continue == True
-
-# 특정 낱말을 이미 나온말(history)에 추가
-word_relay.add_history('문지기')
-print(word_relay.history) # word_relay.history = ['질문', '문지기'], 질문 was added get_next above
-
-# history 를 초기화
-word_relay.reset()
-print(word_relay.history) # word_relay.history = []
-```
-
-## etc
-Checking whether word is valid or not is not implemented in this project, since 1. criteria for *valid language* is keep changing, 2. including korean dictionary can make this package too big. You can implement your own code to check whether word is valid or not.
-
-## Turso-backed Home Assistant and local game
-
-The root-level `ha_word_relay.py` uses Turso as its word source. It checks that
-player words exist, rejects repeats and invalid chains, and chooses the next
-computer word from the database. No word-list file is read during gameplay.
-
-Create a Turso database and auth token, then set these environment variables in
-the shell where the local game will run:
-
+### 1. 파이썬 의존성 설치
 ```powershell
-$env:TURSO_DATABASE_URL = "your Turso database URL"
-$env:TURSO_AUTH_TOKEN = "your Turso auth token"
-python -m pip install -r requirements.txt
-python .\ha_word_relay.py
+pip install -r requirements.txt
 ```
 
-The `words` table has these columns:
-
-| Column | Meaning |
-| --- | --- |
-| `word` | Normalized Korean word, primary key |
-| `first_letter` / `last_letter` | Letters used for chain lookup |
-| `dictionary_registered` | `0` or `1`; default is `0` until verified |
-| `registered_by` | Cline, user, importer, or another identifier |
-| `registered_at` | UTC database timestamp at first registration |
-| `notes` | Other information |
-
-For example, after connecting the Turso MCP in Cline, the equivalent SQL for
-registering a verified word is:
-
-```sql
-UPDATE words
-SET dictionary_registered = 1,
-	registered_by = 'cline',
-	notes = '표준국어대사전 확인'
-WHERE word = '사과';
-```
-
-The game currently uses all words in the `words` table and treats
-`dictionary_registered` as metadata. This avoids making the game unusable when
-the imported list has not been reviewed yet. The `get_word()` and
-`set_dictionary_status()` methods in `word_store.py` are available for an MCP
-관리 script or future dictionary-only mode.
-
-Difficulty is configured with `WORD_GAME_DIFFICULTY` or the HA service's
-`difficulty` field:
-
-- `상`: choose the candidate with the fewest next words.
-- `중`: choose randomly among candidates with 11-19 next words.
-- `하`: choose randomly among candidates with 30-50 next words.
-
-If a requested range has no candidates, the computer has no valid response and
-the player wins that round. It does not select a word outside the requested
-range.
-For Home Assistant Pyscript, place `ha_word_relay.py` and `word_store.py` in the
-Pyscript scripts directory, install `turso_serverless` in the Pyscript Python
-environment, and provide `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` to Home
-Assistant. Update the TTS and media-player entity IDs in `ha_word_relay.py` to match
-your setup.
-
-When a player word is not in Turso, `ha_word_relay.py` checks the Standard
-Korean Language Dictionary API. Add its key only to the local `.env` file:
-
+### 2. 환경변수 설정 (`.env`)
+프로젝트 루트 폴더에 `.env` 파일을 만들고 아래 정보를 입력합니다.
 ```env
+# Turso Cloud DB 접속 정보 (필수)
+TURSO_DATABASE_URL=libsql://your-db.turso.io
+TURSO_AUTH_TOKEN=your-turso-token
+
+# 게임 기본 난이도 (상 / 중 / 하, 기본값: 하)
+WORD_GAME_DIFFICULTY=하
+
+# 국립국어원 표준국어대사전 Open API 키 (선택/권장)
 STDICT_API_KEY=your-stdict-api-key
-```
 
-An exact noun match is saved to Turso with its definition, type, and dictionary
-link, but those details are not spoken during the game. If the API is
-unavailable, the game asks the player to retry instead of treating the word as a
-loss.
-
-To allow terms that are not yet in the Standard Korean Language Dictionary,
-enable the Jev AI fallback in the local `.env` file:
-
-```env
+# Jev AI (TypeSafe) 미등재어 판정 설정 (선택)
 ALLOW_UNREGISTERED_WORDS=true
 JEV_API_KEY=your-jev-api-key
 ALLOW_DIALECT_WORDS=false
 ```
 
-Jev receives a structured yes/no question about whether the term is an
-established word or technical term suitable for a social Korean word-chain
-game. A probability of 0.5 or higher allows the word, which is saved with
-`dictionary_registered=0` and `registered_by=jev_ai`. The Jev decision details
-are not spoken during the game. Profanity is always rejected. Dialect words are
-rejected by default and can only be allowed with `ALLOW_DIALECT_WORDS=true`.
+---
 
-The VS Code MCP configuration in `.vscode/mcp.json` connects to Turso Cloud's
-official MCP server. Authorize it through the OAuth prompt in VS Code. This MCP
-connection manages Turso Cloud; the game itself connects with the database URL
-and token above.
+## 실행 방법
+
+### 로컬 터미널에서 실행
+```powershell
+python .\ha_word_relay.py
+```
+- 단어를 입력하며 대화형으로 게임을 진행합니다.
+- `q`를 입력하면 게임이 종료됩니다.
+
+### Home Assistant (Pyscript) 연동
+1. Home Assistant의 `config/pyscript/` 디렉토리에 아래 파일들을 복사합니다:
+   - `ha_word_relay.py`
+   - `word_store.py`
+   - `stdict_api.py`
+   - `jev_api.py`
+   - `korean_word_relay/` 폴더 전체
+2. HA Pyscript 환경에 `turso_serverless`, `hgtk`, `six`, `python-dotenv` 패키지가 설치되어 있어야 합니다.
+3. `ha_word_relay.py` 상단의 TTS 엔진 및 스피커 엔티티 ID를 본인 환경에 맞게 수정합니다:
+   - `entity_id="tts.piper"`
+   - `media_player_entity_id="media_player.your_speaker"`
+4. HA 자동화 또는 개발자 도구의 서비스에서 호출:
+   ```yaml
+   service: pyscript.manage_word_relay
+   data:
+     user_word: "사과"
+     difficulty: "중" # 생략 시 .env 기본값 사용
+   ```
+
+---
+
+## 데이터베이스 구조 (`words` 테이블)
+
+| 컬럼명 | 타입 | 설명 |
+| --- | --- | --- |
+| `word` | TEXT | 정규화된 한글 단어 (Primary Key) |
+| `first_letter` | TEXT | 첫 글자 (조회 인덱스) |
+| `last_letter` | TEXT | 끝 글자 |
+| `word_type` | TEXT | 단어 종류 (고유어, 한자어, 외래어, AI승인 등) |
+| `dictionary_registered` | INTEGER | 국어사전 등재 여부 (1: 등재, 0: 미등재/AI허용) |
+| `registered_by` | TEXT | 등록 출처 (`csv_import`, `stdict_api`, `jev_ai` 등) |
+| `registered_at` | TEXT | 등록 일시 (UTC) |
+| `notes` | TEXT | 뜻풀이 또는 비고 |
+
+---
+
+## DB 백업
+현재 `words` 테이블을 `words_bak` 테이블로 복사해두려면:
+```powershell
+python .\backup_words.py
+```
 
 
