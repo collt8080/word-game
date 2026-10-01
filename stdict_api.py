@@ -64,9 +64,19 @@ def lookup_word(word, api_key=None):
     )
     try:
         with urlopen(request, timeout=10) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+            response_body = response.read().decode("utf-8-sig").strip()
     except Exception as error:
         raise DictionaryApiError(f"Dictionary API request failed: {error}") from error
+
+    if not response_body:
+        return None
+
+    try:
+        payload = json.loads(response_body)
+    except json.JSONDecodeError as error:
+        raise DictionaryApiError(
+            "Dictionary API returned a non-empty, invalid JSON response."
+        ) from error
 
     if "error" in payload:
         error = payload["error"]
