@@ -11,35 +11,20 @@ from word_store import TursoWordStore, dueum_candidates
 def _format_chain_error(last_word, word):
     last_char = last_word[-1]
     dueum_chars = dueum_candidates(last_char)
-
-    def _josa_ro(char):
-        code = ord(char) - 0xAC00
-        return "로" if 0 <= code < 11172 and code % 28 in (0, 8) else "으로"
-
-    def _josa_eun(char):
-        code = ord(char) - 0xAC00
-        return "은" if 0 <= code < 11172 and code % 28 != 0 else "는"
-
     code = ord(last_char) - 0xAC00
     has_hangul = 0 <= code < 11172
 
     if dueum_chars:
         dueum_text = ", ".join(f"'{c}'" for c in dueum_chars)
-        msg = f"'{last_word}' 다음에는 '{last_char}' 또는 두음법칙에 따라 {dueum_text}{_josa_ro(dueum_chars[-1])} 시작해야 합니다."
+        msg = f"'{last_word}'의 끝 글자 '{last_char}'나 {dueum_text}로 시작하는 말을 해 주세요."
         if has_hangul and code // 588 == 5:
             vowel = (code % 588) // 28
             trailing = code % 28
             wrong_ieung = chr(0xAC00 + (11 * 21 + vowel) * 28 + trailing)
             if word and word[0] == wrong_ieung:
-                msg += f" (참고: '{last_char}'{_josa_eun(last_char)} 두음법칙상 '{dueum_chars[0]}'{_josa_ro(dueum_chars[0])}만 바뀌며 '{wrong_ieung}'{_josa_ro(wrong_ieung)}는 바뀌지 않습니다.)"
+                msg += f" 끝 글자 '{last_char}'는 '{dueum_chars[0]}'로도 이어져요. '{wrong_ieung}'로는 안 돼요."
     else:
-        msg = f"'{last_word}' 다음에는 '{last_char}'{_josa_ro(last_char)} 시작해야 합니다."
-        if has_hangul and code // 588 in (2, 5):
-            vowel = (code % 588) // 28
-            trailing = code % 28
-            wrong_ieung = chr(0xAC00 + (11 * 21 + vowel) * 28 + trailing)
-            if word and word[0] == wrong_ieung:
-                msg += f" (참고: '{last_char}'{_josa_eun(last_char)} 두음법칙상 '{wrong_ieung}'{_josa_ro(wrong_ieung)} 바뀌지 않습니다.)"
+        msg = f"'{last_word}'의 끝 글자 '{last_char}'로 시작하는 말을 해 주세요."
     return msg
 
 
@@ -80,25 +65,25 @@ class TursoWordRelayGame:
         self.active = True
         self.mistakes = 0
         return (
-            f"끝말잇기를 시작합니다. 제 단어는 {selected_start_word}입니다. "
-            f"'{selected_start_word[-1]}'(으)로 시작하는 단어를 말씀해 주세요."
+            f"끝말잇기 시작해요! 제가 먼저 '{selected_start_word}'라고 했어요. "
+            f"이제 '{selected_start_word[-1]}'로 시작하는 낱말을 말해 주세요!"
         )
 
     def _mistake(self, message):
         self.mistakes += 1
         if self.mistakes >= 2:
             self.active = False
-            return f"{message} 두 번 틀렸습니다. 제가 이겼습니다!", True
-        return f"{message} 한 번 틀렸습니다. 다시 시도해 주세요.", False
+            return f"{message} 두 번 틀렸어요. 이번엔 제가 이겼어요!", True
+        return f"{message} 한 번 틀렸어요. 한 번 더 기회가 있어요.", False
 
     def submit(self, user_word):
         word = normalize_player_word(user_word)
         if not word:
-            return self._mistake("두 글자 이상의 단어를 입력해 주세요.")
+            return self._mistake("두 글자 이상인 낱말을 말해 주세요.")
         if not self.relay.can_follow(self.last_word, word):
             return self._mistake(_format_chain_error(self.last_word, word))
         if word in self.relay.history:
-            return self._mistake(f"{word}은(는) 이미 사용한 단어입니다.")
+            return self._mistake(f"'{word}'은(는) 아까 나왔어요.")
         dictionary_entry = None
         word_source = "db"
         store_unregistered_word = False
@@ -107,30 +92,30 @@ class TursoWordRelayGame:
                 dictionary_entry = lookup_word(word)
             except DictionaryApiError as error:
                 if "STDICT_API_KEY is not configured" in str(error):
-                    return f"{word}은(는) DB에 없습니다. Home Assistant에 STDICT_API_KEY 설정이 필요합니다.", False
-                return f"{word}은(는) DB에 없습니다. 표준국어대사전 API 연결에 실패했습니다. 네트워크나 API 상태를 확인한 뒤 다시 시도해 주세요.", False
+                    return "사전 설정을 찾지 못했어요. 어른에게 알려 주세요.", False
+                return "지금은 사전을 확인할 수 없어요. 잠시 뒤 다시 해봐요.", False
             if dictionary_entry is None:
                 allow_unregistered = os.getenv(
                     "ALLOW_UNREGISTERED_WORDS", "false"
                 ).strip().lower() in {"1", "true", "yes", "y"}
                 if not allow_unregistered:
-                    return self._mistake(f"{word}은(는) DB와 표준국어대사전에 없습니다.")
+                    return self._mistake(f"'{word}'은(는) 사전에서 찾지 못했어요. 다른 낱말을 말해 볼까요?")
                 try:
                     jev_decision = is_word_chain_acceptable(word)
                 except JevApiError:
-                    return f"{word}은(는) DB에 없습니다. Jev AI를 확인할 수 없으니 다시 시도해 주세요.", False
+                    return "새 낱말을 확인할 수 없어요. 잠시 뒤 다시 해봐요.", False
                 allow_dialect = os.getenv(
                     "ALLOW_DIALECT_WORDS", "false"
                 ).strip().lower() in {"1", "true", "yes", "y"}
                 if jev_decision.profane:
-                    return self._mistake(f"{word}은(는) 비속어라서 사용할 수 없습니다.")
+                    return self._mistake("그 말은 게임에서 쓰지 않기로 해요.")
                 if jev_decision.dialect:
                     if not allow_dialect:
-                        return self._mistake(f"{word}은(는) 방언이라서 사용할 수 없습니다.")
+                        return self._mistake("그 방언은 이번 게임에서 쓸 수 없어요.")
                 elif not jev_decision.acceptable:
-                    return self._mistake(f"{word}은(는) 끝말잇기에 사용할 수 없는 단어입니다.")
+                    return self._mistake("그 말은 끝말잇기 낱말로 쓰기 어려워요.")
                 if not jev_decision.lexical_item:
-                    return self._mistake(f"{word}은(는) 문장이나 활용형이라 끝말잇기 단어로 사용할 수 없습니다.")
+                    return self._mistake("문장 말고 낱말 하나를 말해 주세요.")
                 store_unregistered_word = (
                     not jev_decision.dialect
                     and jev_decision.noun
@@ -170,18 +155,18 @@ class TursoWordRelayGame:
         next_word = self.relay.choose_reply(word)
         if not next_word:
             self.active = False
-            return f"{word}! 제가 이어갈 단어가 없네요. 당신이 이겼습니다!", True
+            return f"{word}! 제가 이을 말을 못 찾았어요. 당신이 이겼어요!", True
 
         self.last_word = next_word
         self.mistakes = 0
         source_messages = {
             "db": "",
-            "dictionary": " 표준국어대사전에서 확인했어요.",
-            "jev": " 사전에는 없지만 끝말잇기 단어로 인정했어요.",
+            "dictionary": " 국어사전에서 찾았어요.",
+            "jev": " 사전에는 없지만 이번엔 인정할게요.",
         }
         return (
-            f"{word}!{source_messages[word_source]} 제 단어는 {next_word}입니다. "
-            f"'{next_word[-1]}'(으)로 시작해 주세요.",
+            f"{word}!{source_messages[word_source]} 제 말은 '{next_word}'예요. "
+            f"'{next_word[-1]}'로 시작하는 말을 해 주세요.",
             False,
         )
 
