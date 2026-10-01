@@ -3,6 +3,7 @@ import os
 from korean_word_relay import WordRelay
 from korean_word_relay.utils import preprocess_word
 
+from jev_api import JevApiError, is_word_chain_acceptable
 from stdict_api import DictionaryApiError, lookup_word
 from word_store import TursoWordStore
 
@@ -76,7 +77,24 @@ class TursoWordRelayGame:
             except DictionaryApiError:
                 return f"{word}은(는) DB에 없습니다. 사전 API를 확인할 수 없으니 다시 시도해 주세요.", False
             if dictionary_entry is None:
-                return self._mistake(f"{word}은(는) DB와 표준국어대사전에 없습니다.")
+                allow_unregistered = os.getenv(
+                    "ALLOW_UNREGISTERED_WORDS", "false"
+                ).lower() in {"1", "true", "yes", "y"}
+                if not allow_unregistered:
+                    return self._mistake(f"{word}은(는) DB와 표준국어대사전에 없습니다.")
+                try:
+                    jev_accepted = is_word_chain_acceptable(word)
+                except JevApiError:
+                    return f"{word}은(는) DB에 없습니다. Jev AI를 확인할 수 없으니 다시 시도해 주세요.", False
+                if not jev_accepted:
+                    return self._mistake(f"{word}은(는) 끝말잇기에 사용할 수 없는 단어입니다.")
+                self.store.add_word(
+                    word,
+                    word_type="AI승인",
+                    dictionary_registered=False,
+                    registered_by="jev_ai",
+                    notes="Jev AI acceptable probability >= 0.5",
+                )
 
         if dictionary_entry is not None:
             self.store.add_word(

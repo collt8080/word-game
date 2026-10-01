@@ -209,6 +209,20 @@ link, but those details are not spoken during the game. If the API is
 unavailable, the game asks the player to retry instead of treating the word as a
 loss.
 
+To allow terms that are not yet in the Standard Korean Language Dictionary,
+enable the Jev AI fallback in the local `.env` file:
+
+```env
+ALLOW_UNREGISTERED_WORDS=true
+JEV_API_KEY=your-jev-api-key
+```
+
+Jev receives a structured yes/no question about whether the term is an
+established word or technical term suitable for a social Korean word-chain
+game. A probability of 0.5 or higher allows the word, which is saved with
+`dictionary_registered=0` and `registered_by=jev_ai`. The Jev decision details
+are not spoken during the game.
+
 The VS Code MCP configuration in `.vscode/mcp.json` connects to Turso Cloud's
 official MCP server. Authorize it through the OAuth prompt in VS Code. This MCP
 connection manages Turso Cloud; the game itself connects with the database URL

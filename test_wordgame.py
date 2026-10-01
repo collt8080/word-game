@@ -110,6 +110,23 @@ class WordChainTests(unittest.TestCase):
         self.assertEqual(store.get_word("과즙")["word_type"], "고유어")
         store.close()
 
+    def test_jev_can_allow_non_dictionary_word_when_enabled(self):
+        store = TursoWordStore(sqlite3.connect(":memory:"))
+        store.initialize()
+        store.add_words(["사과", "과자", "즙액"])
+        game = TursoWordRelayGame(store, start_word="사과", difficulty="상")
+        game.start()
+        with patch.dict("os.environ", {"ALLOW_UNREGISTERED_WORDS": "true"}):
+            with patch("ha_word_relay.lookup_word", return_value=None):
+                with patch("ha_word_relay.is_word_chain_acceptable", return_value=True):
+                    message, game_over = game.submit("과즙")
+        self.assertFalse(game_over)
+        self.assertIn("제 단어는 즙액입니다", message)
+        metadata = store.get_word("과즙")
+        self.assertFalse(metadata["dictionary_registered"])
+        self.assertEqual(metadata["registered_by"], "jev_ai")
+        store.close()
+
     def test_dictionary_api_matches_hyphenated_headword(self):
         payload = {
             "channel": {
