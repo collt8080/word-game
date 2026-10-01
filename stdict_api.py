@@ -92,6 +92,7 @@ def lookup_word(word, api_key=None):
         (
             item for item in items
             if _comparable_word(item.get("word")) == comparable_word
+            and item.get("pos") == "명사"
         ),
         None,
     )
