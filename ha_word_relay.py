@@ -108,8 +108,10 @@ class TursoWordRelayGame:
         if not self.store.contains(word):
             try:
                 dictionary_entry = lookup_word(word)
-            except DictionaryApiError:
-                return f"{word}은(는) DB에 없습니다. 사전 API를 확인할 수 없으니 다시 시도해 주세요.", False
+            except DictionaryApiError as error:
+                if "STDICT_API_KEY is not configured" in str(error):
+                    return f"{word}은(는) DB에 없습니다. Home Assistant에 STDICT_API_KEY 설정이 필요합니다.", False
+                return f"{word}은(는) DB에 없습니다. 표준국어대사전 API 연결에 실패했습니다. 네트워크나 API 상태를 확인한 뒤 다시 시도해 주세요.", False
             if dictionary_entry is None:
                 allow_unregistered = os.getenv(
                     "ALLOW_UNREGISTERED_WORDS", "false"
