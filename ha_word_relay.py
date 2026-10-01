@@ -65,6 +65,10 @@ class TursoWordRelayGame:
             return self._mistake("두 글자 이상의 단어를 입력해 주세요.")
         if word in self.relay.history:
             return self._mistake(f"{word}은(는) 이미 사용한 단어입니다.")
+        if not self.relay.check_continue(self.last_word, word):
+            return self._mistake(
+                f"{self.last_word} 다음에는 {word}을(를) 말할 수 없습니다."
+            )
         dictionary_entry = None
         if not self.store.contains(word):
             try:
@@ -73,10 +77,6 @@ class TursoWordRelayGame:
                 return f"{word}은(는) DB에 없습니다. 사전 API를 확인할 수 없으니 다시 시도해 주세요.", False
             if dictionary_entry is None:
                 return self._mistake(f"{word}은(는) DB와 표준국어대사전에 없습니다.")
-        if not self.relay.check_continue(self.last_word, word):
-            return self._mistake(
-                f"{self.last_word} 다음에는 {word}을(를) 말할 수 없습니다."
-            )
 
         if dictionary_entry is not None:
             self.store.add_word(

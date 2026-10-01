@@ -157,6 +157,13 @@ class WordChainTests(unittest.TestCase):
         self.assertTrue(game_over)
         self.assertIn("두 번 틀렸습니다", message)
 
+    def test_invalid_chain_does_not_call_dictionary_api(self):
+        with patch("ha_word_relay.lookup_word") as lookup:
+            message, game_over = self.game.submit("자동차")
+        self.assertFalse(game_over)
+        self.assertIn("한 번 틀렸습니다", message)
+        lookup.assert_not_called()
+
     def test_applies_dueum_rule(self):
         self.assertEqual(dueum_candidates("력"), ["녁", "역"])
         self.assertEqual(dueum_candidates("녀"), ["여"])
