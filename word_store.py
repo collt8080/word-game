@@ -376,17 +376,26 @@ class TursoWordStore:
                 letters.extend(dueum_candidates(candidate[1]))
             return sum(counts.get(letter, 0) for letter in letters)
 
-        thresholds = {"상": 0, "중": 3, "하": 10}
-        if difficulty not in thresholds:
+        if difficulty not in {"상", "중", "하"}:
             difficulty = "상"
         scored_candidates = [
             (candidate, continuation_count(candidate)) for candidate in candidates
         ]
-        eligible = [
-            item for item in scored_candidates if item[1] > thresholds[difficulty]
-        ]
-        if not eligible:
+        if difficulty == "상":
             eligible = scored_candidates
+        else:
+            bounds = {"중": (4, 6), "하": (11, 13)}[difficulty]
+            eligible = [
+                item for item in scored_candidates
+                if bounds[0] <= item[1] <= bounds[1]
+            ]
+            if not eligible:
+                eligible = scored_candidates
+                return min(
+                    eligible,
+                    key=lambda item: (item[1], len(item[0][0]), item[0][0]),
+                )[0][0]
+            return random.choice(eligible)[0][0]
         return min(
             eligible,
             key=lambda item: (item[1], len(item[0][0]), item[0][0]),

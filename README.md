@@ -135,6 +135,16 @@ The game currently uses all words in the `words` table and treats
 the imported list has not been reviewed yet. The `get_word()` and
 `set_dictionary_status()` methods in `word_store.py` are available for an MCP
 관리 script or future dictionary-only mode.
+
+Difficulty is configured with `WORD_GAME_DIFFICULTY` or the HA service's
+`difficulty` field:
+
+- `상`: choose the candidate with the fewest next words.
+- `중`: choose randomly among candidates with 4-6 next words.
+- `하`: choose randomly among candidates with 11-13 next words.
+
+If a requested range has no candidates, the game falls back to the candidate
+with the fewest next words.
 `preprocess.py` imports every `.json` file in `raw_data` into Turso and adds the
 game's starting word. It keeps only entries where `word_unit` is `단어`, a
 `pos_info` item has `pos` equal to `명사`, `word_type` is one of `고유어`,
