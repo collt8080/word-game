@@ -3,6 +3,7 @@ import os
 from korean_word_relay import WordRelay
 from korean_word_relay.utils import preprocess_word
 
+from stdict_api import DictionaryApiError, lookup_word
 from word_store import TursoWordStore
 
 
@@ -51,21 +52,43 @@ class TursoWordRelayGame:
         if word in self.relay.history:
             self.active = False
             return f"{word}은(는) 이미 사용한 단어입니다. 제가 이겼습니다!", True
+        dictionary_entry = None
         if not self.store.contains(word):
-            self.active = False
-            return f"{word}은(는) 단어 목록에 없습니다. 제가 이겼습니다!", True
+            try:
+                dictionary_entry = lookup_word(word)
+            except DictionaryApiError:
+                return f"{word}은(는) DB에 없습니다. 사전 API를 확인할 수 없으니 다시 시도해 주세요.", False
+            if dictionary_entry is None:
+                self.active = False
+                return f"{word}은(는) DB와 표준국어대사전에 없습니다. 제가 이겼습니다!", True
         if not self.relay.check_continue(self.last_word, word):
             self.active = False
             return f"{self.last_word} 다음에는 {word}을(를) 말할 수 없습니다. 제가 이겼습니다!", True
 
+        if dictionary_entry is not None:
+            self.store.add_word(
+                word,
+                word_type=dictionary_entry.word_type,
+                dictionary_registered=True,
+                registered_by="stdict_api",
+                notes=dictionary_entry.definition,
+            )
         self.relay.add_history(word)
         next_word = self.relay.get_next(word)
+        dictionary_message = ""
+        if dictionary_entry is not None:
+            dictionary_message = (
+                f" 표준국어대사전 확인: {dictionary_entry.definition} "
+                f"유형은 {dictionary_entry.word_type}, 품사는 {dictionary_entry.part_of_speech}입니다."
+            )
+            if dictionary_entry.link:
+                dictionary_message += f" 자세히 보기: {dictionary_entry.link}"
         if not next_word:
             self.active = False
-            return f"{word}! 제가 이어갈 단어가 없네요. 당신이 이겼습니다!", True
+            return f"{word}!{dictionary_message} 제가 이어갈 단어가 없네요. 당신이 이겼습니다!", True
 
         self.last_word = next_word
-        return f"{word}! 제 단어는 {next_word}입니다. '{next_word[-1]}'(으)로 시작해 주세요.", False
+        return f"{word}!{dictionary_message} 제 단어는 {next_word}입니다. '{next_word[-1]}'(으)로 시작해 주세요.", False
 
     def close(self):
         self.store.close()

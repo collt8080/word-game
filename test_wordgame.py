@@ -1,6 +1,8 @@
 import sqlite3
 import unittest
+from unittest.mock import patch
 
+from stdict_api import DictionaryEntry
 from word_store import TursoWordStore, dueum_candidates
 from ha_word_relay import TursoWordRelayGame
 
@@ -64,10 +66,32 @@ class WordChainTests(unittest.TestCase):
         self.assertEqual(selected, "자원")
         store.close()
 
+    def test_missing_word_is_verified_by_dictionary_api_and_saved(self):
+        store = TursoWordStore(sqlite3.connect(":memory:"))
+        store.initialize()
+        store.add_words(["사과", "즙액"])
+        game = TursoWordRelayGame(store, start_word="사과")
+        game.start()
+        entry = DictionaryEntry(
+            word="과즙",
+            definition="과일에서 짜낸 즙.",
+            word_type="고유어",
+            part_of_speech="명사",
+            link="https://stdict.korean.go.kr/example",
+        )
+        with patch("ha_word_relay.lookup_word", return_value=entry):
+            message, game_over = game.submit("과즙")
+        self.assertFalse(game_over)
+        self.assertIn("과일에서 짜낸 즙", message)
+        self.assertIn("https://stdict.korean.go.kr/example", message)
+        self.assertEqual(store.get_word("과즙")["word_type"], "고유어")
+        store.close()
+
     def test_rejects_unknown_word(self):
-        message, game_over = self.game.submit("과자아")
+        with patch("ha_word_relay.lookup_word", return_value=None):
+            message, game_over = self.game.submit("과자아")
         self.assertTrue(game_over)
-        self.assertIn("단어 목록에 없습니다", message)
+        self.assertIn("표준국어대사전에 없습니다", message)
 
     def test_applies_dueum_rule(self):
         self.assertEqual(dueum_candidates("력"), ["녁"])

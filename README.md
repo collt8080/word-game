@@ -186,6 +186,17 @@ environment, and provide `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` to Home
 Assistant. Update the TTS and media-player entity IDs in `wordgame.py` to match
 your setup.
 
+When a player word is not in Turso, `ha_word_relay.py` checks the Standard
+Korean Language Dictionary API. Add its key only to the local `.env` file:
+
+```env
+STDICT_API_KEY=your-stdict-api-key
+```
+
+An exact noun match is saved to Turso with its definition, type, and dictionary
+link, then included in the spoken game response. If the API is unavailable, the
+game asks the player to retry instead of treating the word as a loss.
+
 The VS Code MCP configuration in `.vscode/mcp.json` connects to Turso Cloud's
 official MCP server. Authorize it through the OAuth prompt in VS Code. This MCP
 connection manages Turso Cloud; the game itself connects with the database URL
