@@ -77,7 +77,7 @@ def is_word_chain_acceptable(word, api_key=None):
 
     try:
         answers = payload["answers"]
-        acceptable = float(answers["is_acceptable"]["noul"]) >= 0.5
+        acceptable = float(answers["is_acceptable"]["noul"]) >= 0.6
         profane = float(answers["is_profane"]["noul"]) >= 0.5
         dialect = float(answers["is_dialect"]["noul"]) >= 0.5
         lexical_item = float(answers["is_lexical_item"]["noul"]) >= 0.5
