@@ -93,19 +93,18 @@ Checking whether word is valid or not is not implemented in this project, since 
 
 ## Turso-backed Home Assistant and local game
 
-The root-level `wordgame.py` uses Turso as its word source. It checks that
+The root-level `ha_word_relay.py` uses Turso as its word source. It checks that
 player words exist, rejects repeats and invalid chains, and chooses the next
 computer word from the database. No word-list file is read during gameplay.
 
 Create a Turso database and auth token, then set these environment variables in
-the shell where the importer or local game will run:
+the shell where the local game will run:
 
 ```powershell
 $env:TURSO_DATABASE_URL = "your Turso database URL"
 $env:TURSO_AUTH_TOKEN = "your Turso auth token"
 python -m pip install -r requirements.txt
-python .\preprocess.py
-python .\wordgame.py
+python .\ha_word_relay.py
 ```
 
 The `words` table has these columns:
@@ -146,55 +145,10 @@ Difficulty is configured with `WORD_GAME_DIFFICULTY` or the HA service's
 If a requested range has no candidates, the computer has no valid response and
 the player wins that round. It does not select a word outside the requested
 range.
-`preprocess.py` imports every `.json` file in `raw_data` into Turso and adds the
-game's starting word. It keeps only entries where `word_unit` is `단어`, a
-`pos_info` item has `pos` equal to `명사`, `word_type` is one of `고유어`,
-`한자어`, or `외래어`, and the word contains only Korean syllables. Each file is
-sent in batches of 100 records, with a small delay between files:
-
-```powershell
-python .\preprocess.py --batch-size 100 --delay 0.2
-```
-
-The JSON entries are marked as dictionary-registered, with `word_type` stored in
-its own column. The source filename is saved in `notes`. Gameplay reads words
-from Turso after the import.
-
-To create a CSV without connecting to Turso:
-
-```powershell
-python .\export_words_csv.py -o .\words_import.csv
-```
-
-The CSV uses the same filters and normalization rules as the importer. For an
-existing database, import it into a temporary table first, then insert only new
-words so the existing `words` rows are preserved:
-
-```sql
-CREATE TABLE words_import AS SELECT * FROM words WHERE 0;
-```
-
-After importing `words_import.csv` into that temporary table:
-
-```sql
-INSERT OR IGNORE INTO words
-SELECT * FROM words_import;
-DROP TABLE words_import;
-```
-
-Or let the project script import the CSV into the existing `words` table:
-
-```powershell
-python .\import_csv_to_turso.py .\words_import.csv --batch-size 100
-```
-
-Existing words are skipped and only new words are inserted. The script does not
-rename, delete, or modify `words_bak`.
-
-For Home Assistant Pyscript, place `wordgame.py` and `word_store.py` in the
+For Home Assistant Pyscript, place `ha_word_relay.py` and `word_store.py` in the
 Pyscript scripts directory, install `turso_serverless` in the Pyscript Python
 environment, and provide `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` to Home
-Assistant. Update the TTS and media-player entity IDs in `wordgame.py` to match
+Assistant. Update the TTS and media-player entity IDs in `ha_word_relay.py` to match
 your setup.
 
 When a player word is not in Turso, `ha_word_relay.py` checks the Standard
