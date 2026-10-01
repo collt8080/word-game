@@ -104,6 +104,7 @@ class TursoWordRelayGame:
         if word in self.relay.history:
             return self._mistake(f"{word}은(는) 이미 사용한 단어입니다.")
         dictionary_entry = None
+        word_source = "db"
         store_unregistered_word = False
         if not self.store.contains(word):
             try:
@@ -137,6 +138,7 @@ class TursoWordRelayGame:
                     return self._mistake(f"{word}은(는) 문장이나 활용형이라 끝말잇기 단어로 사용할 수 없습니다.")
                 if not jev_decision.acceptable:
                     return self._mistake(f"{word}은(는) 끝말잇기에 사용할 수 없는 단어입니다.")
+                word_source = "jev"
                 if store_unregistered_word:
                     self.store.add_word(
                         word,
@@ -145,6 +147,8 @@ class TursoWordRelayGame:
                         registered_by="jev_ai",
                         notes="Jev AI acceptable probability >= 0.5",
                     )
+            else:
+                word_source = "dictionary"
 
         if dictionary_entry is not None:
             self.store.add_word(
@@ -161,7 +165,17 @@ class TursoWordRelayGame:
             return f"{word}! 제가 이어갈 단어가 없네요. 당신이 이겼습니다!", True
 
         self.last_word = next_word
-        return f"{word}! 제 단어는 {next_word}입니다. '{next_word[-1]}'(으)로 시작해 주세요.", False
+        self.mistakes = 0
+        source_messages = {
+            "db": "",
+            "dictionary": " 표준국어대사전에서 확인했어요.",
+            "jev": " 사전에는 없지만 끝말잇기 단어로 인정했어요.",
+        }
+        return (
+            f"{word}!{source_messages[word_source]} 제 단어는 {next_word}입니다. "
+            f"'{next_word[-1]}'(으)로 시작해 주세요.",
+            False,
+        )
 
     def close(self):
         self.store.close()
