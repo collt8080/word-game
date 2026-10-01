@@ -45,7 +45,7 @@ class WordChainTests(unittest.TestCase):
         store.initialize()
         store.add_words([
             "사과", "과자", "자동차", "자즙", "차수", "차량", "차림",
-            "차례", "차도", "차표", "차장", "차돌", "차선", "차원", "차별", "즙액",
+            "차례", "차도", "차표", "차장", "차돌", "차선", "차원", "차별", "차길", "차벽", "즙액",
         ])
         self.assertEqual(
             store.next_word("자", ["사과", "과자"], difficulty="상"), "자즙"
@@ -62,7 +62,7 @@ class WordChainTests(unittest.TestCase):
         store = TursoWordStore(sqlite3.connect(":memory:"))
         store.initialize()
         words = ["사과", "과자", "자동차", "자즙", "자물", "즙액"]
-        words.extend("차" + chr(0xAC00 + index) for index in range(11))
+        words.extend("차" + chr(0xAC00 + index) for index in range(13))
         words.extend("물" + chr(0xAC00 + index) for index in range(30))
         store.add_words(words)
         medium = store.next_word("자", ["사과", "과자"], difficulty="중")
@@ -158,8 +158,15 @@ class WordChainTests(unittest.TestCase):
         self.assertIn("두 번 틀렸습니다", message)
 
     def test_applies_dueum_rule(self):
-        self.assertEqual(dueum_candidates("력"), ["녁"])
+        self.assertEqual(dueum_candidates("력"), ["녁", "역"])
         self.assertEqual(dueum_candidates("녀"), ["여"])
+
+    def test_counts_dueum_candidates_when_selecting_next_word(self):
+        store = TursoWordStore(sqlite3.connect(":memory:"))
+        store.initialize()
+        store.add_words(["사과", "과력", "녁말", "역사"])
+        self.assertEqual(store.next_word("과", ["사과"], difficulty="상"), "과력")
+        store.close()
 
     def test_stores_word_metadata(self):
         self.store.add_word(

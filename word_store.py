@@ -32,18 +32,22 @@ def dueum_candidates(char):
     leading = code // 588
     vowel = (code % 588) // 28
     trailing = code % 28
-    replacement = None
+    candidates = []
 
     if leading == 5:
-        replacement = 2
+        candidates.append(2)
+        if vowel in {2, 6, 12, 17, 20}:
+            candidates.append(11)
     elif leading == 2 and vowel in {2, 6, 12, 17, 20}:
-        replacement = 11
+        candidates.append(11)
 
-    if replacement is None:
+    if not candidates:
         return []
 
-    next_code = 0xAC00 + (replacement * 21 + vowel) * 28 + trailing
-    return [chr(next_code)]
+    return [
+        chr(0xAC00 + (replacement * 21 + vowel) * 28 + trailing)
+        for replacement in candidates
+    ]
 
 
 class TursoWordStore:
@@ -384,7 +388,7 @@ class TursoWordStore:
         if difficulty == "상":
             eligible = scored_candidates
         else:
-            bounds = {"중": (11, 29), "하": (30, 50)}[difficulty]
+            bounds = {"중": (11, 19), "하": (30, 50)}[difficulty]
             eligible = [
                 item for item in scored_candidates
                 if bounds[0] <= item[1] <= bounds[1]
