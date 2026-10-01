@@ -128,12 +128,13 @@ class TursoWordRelayGame:
                 ).strip().lower() in {"1", "true", "yes", "y"}
                 if jev_decision.profane:
                     return self._mistake(f"{word}은(는) 비속어라서 사용할 수 없습니다.")
-                if jev_decision.dialect and not allow_dialect:
-                    return self._mistake(f"{word}은(는) 방언이라서 사용할 수 없습니다.")
+                if jev_decision.dialect:
+                    if not allow_dialect:
+                        return self._mistake(f"{word}은(는) 방언이라서 사용할 수 없습니다.")
+                elif not jev_decision.acceptable:
+                    return self._mistake(f"{word}은(는) 끝말잇기에 사용할 수 없는 단어입니다.")
                 if not jev_decision.lexical_item:
                     return self._mistake(f"{word}은(는) 문장이나 활용형이라 끝말잇기 단어로 사용할 수 없습니다.")
-                if not jev_decision.acceptable:
-                    return self._mistake(f"{word}은(는) 끝말잇기에 사용할 수 없는 단어입니다.")
                 store_unregistered_word = (
                     not jev_decision.dialect
                     and os.getenv("STORE_JEV_APPROVED_WORDS", "false").strip().lower()
