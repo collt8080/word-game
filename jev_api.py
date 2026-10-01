@@ -37,25 +37,25 @@ def is_word_chain_acceptable(word, api_key=None):
     body = {
         "state": {
             "word": word,
-            "context": "Korean word-chain game. The word may be a technical term, scientific term, product name, or commonly used term even if it is not in the Standard Korean Language Dictionary.",
+            "context": "한국어 끝말잇기에서 사용할 단어를 판정합니다. 표준국어대사전에 아직 없어도 널리 쓰이는 과학·화학·기술 전문 용어는 단어일 수 있습니다. 지역 방언, 비표준 구어 표현, 문장과 활용형은 단어로 인정하지 않습니다.",
         },
         "model": "jev-latest",
         "questions": {
             "is_acceptable": {
                 "type": "noul",
-                "instructions": "Would Korean speakers reasonably accept this as a usable word or established term in a social Korean word-chain game? Return true for established technical, scientific, product, or commonly used terms; return false for typos, random strings, or clearly invalid forms. Do not use this field to decide profanity or dialect.",
+                "instructions": "이 입력이 한국어 끝말잇기에 사용할 수 있는 독립된 단어 또는 확립된 전문 용어입니까? 사전에 아직 등재되지 않은 과학·화학·기술 전문 용어는 인정할 수 있습니다. 오타, 무작위 문자열, 문장, 활용형, 지역 방언, 비표준 구어 표현은 거부하십시오. 비속어 여부는 이 항목에서 판단하지 마십시오.",
             },
             "is_profane": {
                 "type": "noul",
-                "instructions": "Is this Korean word vulgar, obscene, abusive, or profanity?",
+                "instructions": "이 한국어 표현은 비속어, 욕설, 음란하거나 모욕적인 표현입니까? 해당하면 참으로 답하십시오.",
             },
             "is_dialect": {
                 "type": "noul",
-                "instructions": "Is this word primarily a Korean regional dialect or dialectal expression rather than standard Korean?",
+                "instructions": "이 표현은 표준어가 아니라 특정 지역에서 쓰는 방언이나 비표준 지역 표현입니까? 생소한 구어 표현이 지역 방언일 가능성이 있으면 참으로 판단하십시오. 사전에 정식 등재된 표준어 전문 용어는 방언이 아닙니다.",
             },
             "is_lexical_item": {
                 "type": "noul",
-                "instructions": "Is this input a standalone lexical word or established compound term, rather than a sentence, question, greeting, phrase, or inflected/conjugated form? Korean verb/adjective endings such as 습니까, 합니다, 했어요, 하세요 indicate an inflected form and must be false.",
+                "instructions": "이 입력은 문장, 질문, 인사말, 구(phrase), 용언의 활용형이 아니라 독립된 단어 또는 굳어진 합성 전문 용어입니까? '습니까', '합니다', '했어요', '하세요' 같은 동사·형용사 어미로 끝나는 표현은 거짓으로 답하십시오.",
             },
         },
     }
