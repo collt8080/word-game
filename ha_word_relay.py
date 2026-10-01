@@ -63,12 +63,12 @@ class TursoWordRelayGame:
         word = preprocess_word(user_word)
         if not word:
             return self._mistake("두 글자 이상의 단어를 입력해 주세요.")
-        if word in self.relay.history:
-            return self._mistake(f"{word}은(는) 이미 사용한 단어입니다.")
         if not self.relay.check_continue(self.last_word, word):
             return self._mistake(
                 f"{self.last_word} 다음에는 {word}을(를) 말할 수 없습니다."
             )
+        if word in self.relay.history:
+            return self._mistake(f"{word}은(는) 이미 사용한 단어입니다.")
         dictionary_entry = None
         if not self.store.contains(word):
             try:

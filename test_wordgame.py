@@ -164,6 +164,12 @@ class WordChainTests(unittest.TestCase):
         self.assertIn("한 번 틀렸습니다", message)
         lookup.assert_not_called()
 
+    def test_chain_rule_is_checked_before_duplicate_rule(self):
+        message, game_over = self.game.submit("사과")
+        self.assertFalse(game_over)
+        self.assertIn("다음에는 사과", message)
+        self.assertNotIn("이미 사용한 단어", message)
+
     def test_applies_dueum_rule(self):
         self.assertEqual(dueum_candidates("력"), ["녁", "역"])
         self.assertEqual(dueum_candidates("녀"), ["여"])
