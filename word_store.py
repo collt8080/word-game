@@ -1,4 +1,5 @@
 import os
+import random
 import re
 from importlib import import_module
 from pathlib import Path
@@ -390,6 +391,28 @@ class TursoWordStore:
             eligible,
             key=lambda item: (item[1], len(item[0][0]), item[0][0]),
         )[0][0]
+
+    def random_start_word(self, minimum_next_words=30):
+        candidates = self._read_rows(
+            "SELECT word, last_letter FROM words WHERE length(word) = 2"
+        )
+        if not candidates:
+            return None
+
+        counts = dict(
+            self._read_rows(
+                "SELECT first_letter, COUNT(*) FROM words GROUP BY first_letter"
+            )
+        )
+        eligible = []
+        for word, last_letter in candidates:
+            next_count = counts.get(last_letter, 0)
+            next_count += sum(
+                counts.get(letter, 0) for letter in dueum_candidates(last_letter)
+            )
+            if next_count >= minimum_next_words:
+                eligible.append(word)
+        return random.choice(eligible) if eligible else None
 
     def close(self):
         self.connection.close()

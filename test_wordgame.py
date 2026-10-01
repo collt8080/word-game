@@ -66,6 +66,15 @@ class WordChainTests(unittest.TestCase):
         self.assertEqual(selected, "자원")
         store.close()
 
+    def test_random_start_word_has_at_least_thirty_next_words(self):
+        store = TursoWordStore(sqlite3.connect(":memory:"))
+        store.initialize()
+        words = ["가나"] + ["나" + chr(0xAC00 + index) for index in range(30)]
+        store.add_words(words)
+        start_word = store.random_start_word()
+        self.assertEqual(start_word, "가나")
+        store.close()
+
     def test_missing_word_is_verified_by_dictionary_api_and_saved(self):
         store = TursoWordStore(sqlite3.connect(":memory:"))
         store.initialize()

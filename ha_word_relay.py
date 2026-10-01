@@ -8,7 +8,7 @@ from word_store import TursoWordStore
 
 
 class TursoWordRelayGame:
-    def __init__(self, store=None, start_word="조각", difficulty=None):
+    def __init__(self, store=None, start_word=None, difficulty=None):
         self.store = store or TursoWordStore()
         self.store.initialize()
         self.difficulty = difficulty or os.getenv("WORD_GAME_DIFFICULTY", "상")
@@ -30,19 +30,24 @@ class TursoWordRelayGame:
         self.relay.difficulty = difficulty
 
     def start(self):
-        if not self.store.contains(self.start_word):
+        selected_start_word = self.start_word or self.store.random_start_word()
+        if selected_start_word is None:
+            raise RuntimeError(
+                "DB에 다음 단어가 30개 이상인 두 글자 시작 단어가 없습니다."
+            )
+        if not self.store.contains(selected_start_word):
             self.store.add_word(
-                self.start_word,
+                selected_start_word,
                 registered_by="game_start",
                 notes="게임 시작 단어",
             )
         self.relay.reset()
-        self.relay.add_history(self.start_word)
-        self.last_word = self.start_word
+        self.relay.add_history(selected_start_word)
+        self.last_word = selected_start_word
         self.active = True
         return (
-            f"끝말잇기를 시작합니다. 제 단어는 {self.start_word}입니다. "
-            f"'{self.start_word[-1]}'(으)로 시작하는 단어를 말씀해 주세요."
+            f"끝말잇기를 시작합니다. 제 단어는 {selected_start_word}입니다. "
+            f"'{selected_start_word[-1]}'(으)로 시작하는 단어를 말씀해 주세요."
         )
 
     def submit(self, user_word):
