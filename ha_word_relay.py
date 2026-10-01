@@ -22,6 +22,7 @@ class TursoWordRelayGame:
         self.start_word = start_word
         self.last_word = ""
         self.active = False
+        self.mistakes = 0
 
     def set_difficulty(self, difficulty):
         if difficulty not in {"상", "중", "하"}:
@@ -45,18 +46,25 @@ class TursoWordRelayGame:
         self.relay.add_history(selected_start_word)
         self.last_word = selected_start_word
         self.active = True
+        self.mistakes = 0
         return (
             f"끝말잇기를 시작합니다. 제 단어는 {selected_start_word}입니다. "
             f"'{selected_start_word[-1]}'(으)로 시작하는 단어를 말씀해 주세요."
         )
 
+    def _mistake(self, message):
+        self.mistakes += 1
+        if self.mistakes >= 2:
+            self.active = False
+            return f"{message} 두 번 틀렸습니다. 제가 이겼습니다!", True
+        return f"{message} 한 번 틀렸습니다. 다시 시도해 주세요.", False
+
     def submit(self, user_word):
         word = preprocess_word(user_word)
         if not word:
-            return "두 글자 이상의 단어를 입력해 주세요.", False
+            return self._mistake("두 글자 이상의 단어를 입력해 주세요.")
         if word in self.relay.history:
-            self.active = False
-            return f"{word}은(는) 이미 사용한 단어입니다. 제가 이겼습니다!", True
+            return self._mistake(f"{word}은(는) 이미 사용한 단어입니다.")
         dictionary_entry = None
         if not self.store.contains(word):
             try:
@@ -64,11 +72,11 @@ class TursoWordRelayGame:
             except DictionaryApiError:
                 return f"{word}은(는) DB에 없습니다. 사전 API를 확인할 수 없으니 다시 시도해 주세요.", False
             if dictionary_entry is None:
-                self.active = False
-                return f"{word}은(는) DB와 표준국어대사전에 없습니다. 제가 이겼습니다!", True
+                return self._mistake(f"{word}은(는) DB와 표준국어대사전에 없습니다.")
         if not self.relay.check_continue(self.last_word, word):
-            self.active = False
-            return f"{self.last_word} 다음에는 {word}을(를) 말할 수 없습니다. 제가 이겼습니다!", True
+            return self._mistake(
+                f"{self.last_word} 다음에는 {word}을(를) 말할 수 없습니다."
+            )
 
         if dictionary_entry is not None:
             self.store.add_word(

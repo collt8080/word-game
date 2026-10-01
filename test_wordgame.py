@@ -142,8 +142,20 @@ class WordChainTests(unittest.TestCase):
     def test_rejects_unknown_word(self):
         with patch("ha_word_relay.lookup_word", return_value=None):
             message, game_over = self.game.submit("과자아")
-        self.assertTrue(game_over)
+        self.assertFalse(game_over)
         self.assertIn("표준국어대사전에 없습니다", message)
+        with patch("ha_word_relay.lookup_word", return_value=None):
+            message, game_over = self.game.submit("과자아")
+        self.assertTrue(game_over)
+        self.assertIn("두 번 틀렸습니다", message)
+
+    def test_two_wrong_chains_let_computer_win(self):
+        message, game_over = self.game.submit("자동차")
+        self.assertFalse(game_over)
+        self.assertIn("한 번 틀렸습니다", message)
+        message, game_over = self.game.submit("자동차")
+        self.assertTrue(game_over)
+        self.assertIn("두 번 틀렸습니다", message)
 
     def test_applies_dueum_rule(self):
         self.assertEqual(dueum_candidates("력"), ["녁"])
