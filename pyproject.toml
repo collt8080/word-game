@@ -1,3 +1,22 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "turso-korean-word-game"
+version = "1.0.0"
+description = "Turso 기반 Home Assistant 및 로컬 한국어 끝말잇기 게임"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "collt8080" }]
+dependencies = [
+	"turso_serverless",
+	"python-dotenv",
+]
+
+[project.urls]
+Homepage = "https://github.com/collt8080/word-game"
+
+[tool.setuptools]
+packages = ["turso_word_chain"]
+py-modules = ["ha_word_relay", "word_store", "stdict_api", "jev_api"]
