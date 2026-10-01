@@ -72,8 +72,8 @@ python .\ha_word_relay.py
    - `word_store.py`
    - `stdict_api.py`
    - `jev_api.py`
-   - `korean_word_relay/` 폴더 전체
-2. HA Pyscript 환경에 `turso_serverless`, `hgtk`, `six`, `python-dotenv` 패키지가 설치되어 있어야 합니다.
+  - `turso_word_chain/` 폴더 전체
+2. HA Pyscript 환경에 `turso_serverless` 패키지를 설치하고, `.env` 값은 HA 환경변수로 설정합니다.
 3. `ha_word_relay.py` 상단의 TTS 엔진 및 스피커 엔티티 ID를 본인 환경에 맞게 수정합니다:
    - `entity_id="tts.piper"`
    - `media_player_entity_id="media_player.your_speaker"`
@@ -96,7 +96,7 @@ python .\ha_word_relay.py
 | `last_letter` | TEXT | 끝 글자 |
 | `word_type` | TEXT | 단어 종류 (고유어, 한자어, 외래어, AI승인 등) |
 | `dictionary_registered` | INTEGER | 국어사전 등재 여부 (1: 등재, 0: 미등재/AI허용) |
-| `registered_by` | TEXT | 등록 출처 (`csv_import`, `stdict_api`, `jev_ai` 등) |
+| `registered_by` | TEXT | 등록 출처 (`stdict_api`, `jev_ai`, `game_start` 등) |
 | `registered_at` | TEXT | 등록 일시 (UTC) |
 | `notes` | TEXT | 뜻풀이 또는 비고 |
 

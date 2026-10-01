@@ -1,7 +1,7 @@
 import os
 
-from korean_word_relay import WordRelay
-from korean_word_relay.utils import preprocess_word
+from turso_word_chain import KoreanWordChain
+from turso_word_chain.utils import normalize_player_word
 
 from jev_api import JevApiError, is_word_chain_acceptable
 from stdict_api import DictionaryApiError, lookup_word
@@ -48,10 +48,9 @@ class TursoWordRelayGame:
         self.store = store or TursoWordStore()
         self.store.initialize()
         self.difficulty = difficulty or os.getenv("WORD_GAME_DIFFICULTY", "상")
-        self.relay = WordRelay(
-            use_dueum=True,
-            debug_print=False,
+        self.relay = KoreanWordChain(
             word_store=self.store,
+            use_dueum=True,
             difficulty=self.difficulty,
         )
         self.start_word = start_word
@@ -75,8 +74,8 @@ class TursoWordRelayGame:
             raise RuntimeError(
                 f"시작 단어 '{selected_start_word}'가 DB에 없어 게임을 시작할 수 없습니다."
             )
-        self.relay.reset()
-        self.relay.add_history(selected_start_word)
+        self.relay.reset_round()
+        self.relay.remember_word(selected_start_word)
         self.last_word = selected_start_word
         self.active = True
         self.mistakes = 0
@@ -93,10 +92,10 @@ class TursoWordRelayGame:
         return f"{message} 한 번 틀렸습니다. 다시 시도해 주세요.", False
 
     def submit(self, user_word):
-        word = preprocess_word(user_word)
+        word = normalize_player_word(user_word)
         if not word:
             return self._mistake("두 글자 이상의 단어를 입력해 주세요.")
-        if not self.relay.check_continue(self.last_word, word):
+        if not self.relay.can_follow(self.last_word, word):
             return self._mistake(_format_chain_error(self.last_word, word))
         if word in self.relay.history:
             return self._mistake(f"{word}은(는) 이미 사용한 단어입니다.")
@@ -167,8 +166,8 @@ class TursoWordRelayGame:
                     registered_by="stdict_api",
                     notes=dictionary_entry.definition,
                 )
-        self.relay.add_history(word)
-        next_word = self.relay.get_next(word)
+        self.relay.remember_word(word)
+        next_word = self.relay.choose_reply(word)
         if not next_word:
             self.active = False
             return f"{word}! 제가 이어갈 단어가 없네요. 당신이 이겼습니다!", True
