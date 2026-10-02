@@ -5,6 +5,8 @@ from importlib import import_module
 from pathlib import Path
 from time import sleep
 
+_DUEUM_TO_IEUNG_VOWELS = {2, 3, 6, 7, 12, 17, 20}
+
 try:
     load_dotenv = getattr(import_module("dotenv"), "load_dotenv", None)
 except ImportError:
@@ -35,10 +37,8 @@ def dueum_candidates(char):
     candidates = []
 
     if leading == 5:
-        candidates.append(2)
-        if vowel in {2, 3, 6, 7, 12, 17, 20}:
-            candidates.append(11)
-    elif leading == 2 and vowel in {2, 3, 6, 7, 12, 17, 20}:
+        candidates.append(11 if vowel in _DUEUM_TO_IEUNG_VOWELS else 2)
+    elif leading == 2 and vowel in _DUEUM_TO_IEUNG_VOWELS:
         candidates.append(11)
 
     if not candidates:

@@ -9,7 +9,7 @@ Home Assistant(Pyscript) 음성 게임과 로컬 터미널 테스트를 모두 �
 - **Turso Cloud DB 기반**: 파일 대신 클라우드 DB의 단어를 조회하여 끝말잇기 진행
 - **두음법칙 완벽 지원**: `ㄹ → ㄴ`, `ㄹ → ㅇ`, `ㄴ → ㅇ` 등 두음법칙 자동 계산
 - **난이도 조절 (상 / 중 / 하)**:
-  - **상**: 컴퓨터가 다음 이어질 단어 수가 가장 적은 단어(공격적)를 우선 선택 (동률 시 짧은 글자 우선)
+  - **상 (기본값)**: 컴퓨터가 다음 이어질 단어 수가 가장 적은 단어(공격적)를 우선 선택 (동률 시 짧은 글자 우선)
   - **중**: 다음 이어질 단어 수가 11~19개인 단어 중 랜덤 선택
   - **하**: 다음 이어질 단어 수가 30~50개인 단어 중 랜덤 선택 (해당 범위 없으면 플레이어 승리)
 - **랜덤 시작 단어**: DB에서 다음 이어갈 수 있는 단어가 30개 이상인 2글자 단어로 매 판 자동 시작
@@ -38,8 +38,8 @@ pip install -r requirements.txt
 TURSO_DATABASE_URL=libsql://your-db.turso.io
 TURSO_AUTH_TOKEN=your-turso-token
 
-# 게임 기본 난이도 (상 / 중 / 하, 기본값: 하)
-WORD_GAME_DIFFICULTY=하
+# 게임 기본 난이도 (상 / 중 / 하, 기본값: 상)
+WORD_GAME_DIFFICULTY=상
 
 # 국립국어원 표준국어대사전 Open API 키 (선택/권장)
 STDICT_API_KEY=your-stdict-api-key
@@ -79,12 +79,17 @@ python .\ha_word_relay.py
 3. `ha_word_relay.py` 상단의 TTS 엔진 및 스피커 엔티티 ID를 본인 환경에 맞게 수정합니다:
    - `entity_id="tts.piper"`
    - `media_player_entity_id="media_player.your_speaker"`
-4. HA 자동화 또는 개발자 도구의 서비스에서 호출:
+4. 먼저 `user_word` 없이 서비스를 호출해 게임을 시작하고, 이후 입력한 단어를 전달합니다.
    ```yaml
    service: pyscript.manage_word_relay
    data:
-     user_word: "사과"
      difficulty: "중" # 생략 시 .env 기본값 사용
+   ```
+   게임이 시작된 뒤에는 다음처럼 입력을 보냅니다:
+   ```yaml
+   service: pyscript.manage_word_relay
+   data:
+     user_word: "과일"
    ```
 
 ---

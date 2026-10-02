@@ -78,7 +78,7 @@ class TursoWordRelayGame:
 
     def submit(self, user_word):
         word = normalize_player_word(user_word)
-        if word and "없어나졌어" in word:
+        if word and ("없어" in word or "졌어" in word):
             self.active = False
             return "알겠어요. 포기한다고 했으니 게임을 끝낼게요. 이번 판은 제가 이겼어요!", True
         if not word:
@@ -142,10 +142,11 @@ class TursoWordRelayGame:
 
         if dictionary_entry is not None:
             entry_category = dictionary_entry.word_type or ""
+            if "비속어" in entry_category:
+                return self._mistake("그 말은 게임에서 쓰지 않기로 해요.")
             if (
                 dictionary_entry.part_of_speech == "명사"
                 and "방언" not in entry_category
-                and "비속어" not in entry_category
             ):
                 self.store.add_word(
                     word,
