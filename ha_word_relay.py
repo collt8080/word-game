@@ -109,7 +109,11 @@ class TursoWordRelayGame:
                 return "지금은 사전을 확인할 수 없어요. 잠시 뒤 다시 해봐요.", False
             if definition_entry is None:
                 return f"국어사전에서 '{definition_word}'의 뜻을 찾지 못했어요.", False
-            return f"'{definition_entry.word}'의 뜻은 {definition_entry.definition}", False
+            return (
+                f"쉽게 말하면, '{definition_entry.word}'의 뜻은 이거예요: "
+                f"{definition_entry.definition}",
+                False,
+            )
 
         word = normalize_player_word(user_word)
         if word and ("없어" in word or "졌어" in word):
