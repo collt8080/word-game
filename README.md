@@ -15,12 +15,13 @@ Home Assistant(Pyscript) 음성 게임과 로컬 터미널 테스트를 모두 �
 - **랜덤 시작 단어**: DB에서 다음 이어갈 수 있는 단어가 30개 이상인 2글자 단어로 매 판 자동 시작
 - **표준국어대사전 Open API 연동**: DB에 없는 단어를 플레이어가 입력 시 국립국어원 API로 실시간 검증 후 DB 자동 등록
 - **Jev AI 미등재어/신조어 판정**:
-  - 국어사전에 없더라도 화학물질, 전문용어 등 사회 통념상 허용할 단어인지 Jev AI로 판정 (60% 이상 찬성 시 허용 및 `dictionary_registered=0` 등록)
+  - 국어사전에 없더라도 화학물질, 전문용어 등 사회 통념상 허용할 단어인지 Jev AI로 판정 (58% 이상 찬성 시 허용 및 `dictionary_registered=0` 등록)
   - **비속어는 무조건 차단**
   - **방언은 옵션(`ALLOW_DIALECT_WORDS`)으로 게임 사용 여부를 제어**하지만, 방언은 DB에 저장하지 않음
   - **DB에는 명사만 등록**: Jev 승인 단어도 명사 판정을 통과해야 저장하며, 시작 단어는 기존 DB에서만 선택
 - **2회 기회 규칙**: 한 턴에 한 번 틀리면 다시 기회를 주고, 정상적으로 턴이 넘어가면 실수 횟수를 초기화합니다. 같은 턴에서 두 번 틀리면 패배합니다.
 - **등록 출처별 안내**: DB 단어, 표준국어대사전 확인 단어, Jev AI 승인 단어에 서로 다른 짧은 응답을 합니다.
+- **뜻 질문**: 입력에 `무슨 말` 또는 `무슨 뜻`이 있으면 국어사전 뜻을 알려줍니다. 단어를 말하지 않으면 현재 단어를 찾아보며, 게임 턴은 유지됩니다.
 
 ---
 
@@ -48,11 +49,11 @@ STDICT_API_KEY=your-stdict-api-key
 ALLOW_UNREGISTERED_WORDS=true
 JEV_API_KEY=your-jev-api-key
 ALLOW_DIALECT_WORDS=false
-JEV_ACCEPT_THRESHOLD=0.6
+JEV_ACCEPT_THRESHOLD=0.58
 STORE_JEV_APPROVED_WORDS=false
 ```
 
-`JEV_ACCEPT_THRESHOLD`는 미등재 단어 허용 점수 기준(0~1)이며 기본값은 0.6입니다.
+`JEV_ACCEPT_THRESHOLD`는 미등재 단어 허용 점수 기준(0~1)이며 기본값은 0.58입니다.
 `STORE_JEV_APPROVED_WORDS`가 `false`이면 Jev가 허용한 단어도 DB에 저장하지 않습니다.
 
 `pyproject.toml`은 Python 패키지 빌드/설치용 설정입니다. Home Assistant Pyscript는 wheel 설치만으로 서비스를 등록하지 않으므로, 아래 소스 파일을 Pyscript 스크립트 폴더에 배치해야 합니다.

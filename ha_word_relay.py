@@ -1,4 +1,5 @@
 import os
+import re
 
 from turso_word_chain import KoreanWordChain
 from turso_word_chain.utils import normalize_player_word
@@ -26,6 +27,23 @@ def _format_chain_error(last_word, word):
     else:
         msg = f"'{last_word}'의 끝 글자 '{last_char}'로 시작하는 말을 해 주세요."
     return msg
+
+
+def _extract_definition_word(user_input):
+    if not isinstance(user_input, str):
+        return None
+    match = re.search(r"무슨\s*(?:말|뜻)", user_input)
+    if not match:
+        return None
+    words = re.findall(r"[가-힣]+", user_input[:match.start()])
+    if not words:
+        return ""
+    word = words[-1]
+    for particle in ("으로", "에서", "에게", "은", "는", "이", "가", "을", "를", "의", "도"):
+        if word.endswith(particle) and len(word) > len(particle) + 1:
+            word = word[:-len(particle)]
+            break
+    return word if len(word) >= 2 else ""
 
 
 class TursoWordRelayGame:
@@ -77,6 +95,22 @@ class TursoWordRelayGame:
         return f"{message} 한 번 틀렸어요. 한 번 더 기회가 있어요.", False
 
     def submit(self, user_word):
+        definition_word = _extract_definition_word(user_word)
+        if definition_word is not None:
+            if not definition_word:
+                definition_word = self.last_word
+            if not definition_word:
+                return "뜻을 알고 싶은 낱말도 같이 말해 주세요.", False
+            try:
+                definition_entry = lookup_word(definition_word)
+            except DictionaryApiError as error:
+                if "STDICT_API_KEY is not configured" in str(error):
+                    return "사전 설정을 찾지 못했어요. 어른에게 알려 주세요.", False
+                return "지금은 사전을 확인할 수 없어요. 잠시 뒤 다시 해봐요.", False
+            if definition_entry is None:
+                return f"국어사전에서 '{definition_word}'의 뜻을 찾지 못했어요.", False
+            return f"'{definition_entry.word}'의 뜻은 {definition_entry.definition}", False
+
         word = normalize_player_word(user_word)
         if word and ("없어" in word or "졌어" in word):
             self.active = False
@@ -134,7 +168,7 @@ class TursoWordRelayGame:
                         registered_by="jev_ai",
                         notes=(
                             "Jev AI accepted at threshold "
-                            f"{os.getenv('JEV_ACCEPT_THRESHOLD', '0.6').strip()}"
+                            f"{os.getenv('JEV_ACCEPT_THRESHOLD', '0.58').strip()}"
                         ),
                     )
             else:

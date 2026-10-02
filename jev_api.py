@@ -35,7 +35,7 @@ def is_word_chain_acceptable(word, api_key=None):
     if not api_key:
         raise JevApiError("JEV_API_KEY is not configured.")
     try:
-        accept_threshold = float(os.getenv("JEV_ACCEPT_THRESHOLD", "0.6").strip())
+        accept_threshold = float(os.getenv("JEV_ACCEPT_THRESHOLD", "0.58").strip())
     except ValueError as error:
         raise JevApiError("JEV_ACCEPT_THRESHOLD must be a number from 0 to 1.") from error
     if not 0 <= accept_threshold <= 1:
