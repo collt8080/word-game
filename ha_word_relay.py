@@ -32,7 +32,7 @@ class TursoWordRelayGame:
     def __init__(self, store=None, start_word=None, difficulty=None):
         self.store = store or TursoWordStore()
         self.store.initialize()
-        self.difficulty = difficulty or os.getenv("WORD_GAME_DIFFICULTY", "상")
+        self.difficulty = difficulty or os.getenv("WORD_GAME_DIFFICULTY", "하")
         self.relay = KoreanWordChain(
             word_store=self.store,
             use_dueum=True,
@@ -156,18 +156,22 @@ class TursoWordRelayGame:
                     notes=dictionary_entry.definition,
                 )
         self.relay.remember_word(word)
+        source_messages = {
+            "db": " 낱말 목록에서 찾았어요.",
+            "dictionary": " 국어사전에서 찾았어요.",
+            "jev": " 국어사전에는 없지만 AI가 낱말로 인정했어요.",
+        }
         next_word = self.relay.choose_reply(word)
         if not next_word:
             self.active = False
-            return f"{word}! 제가 이을 말을 못 찾았어요. 당신이 이겼어요!", True
+            return (
+                f"{word}!{source_messages[word_source]} "
+                "제가 이을 말을 못 찾았어요. 당신이 이겼어요!",
+                True,
+            )
 
         self.last_word = next_word
         self.mistakes = 0
-        source_messages = {
-            "db": "",
-            "dictionary": " 국어사전에서 찾았어요.",
-            "jev": " 사전에는 없지만 이번엔 인정할게요.",
-        }
         return (
             f"{word}!{source_messages[word_source]} 제 말은 '{next_word}'예요. "
             f"'{next_word[-1]}'로 시작하는 말을 해 주세요.",
