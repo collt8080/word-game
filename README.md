@@ -70,15 +70,14 @@ python .\ha_word_relay.py
 - `q`를 입력하면 게임이 종료됩니다.
 
 ### Home Assistant (Pyscript) 연동
-1. Home Assistant의 `config/pyscript/` 디렉토리에 아래 파일들을 복사합니다:
-   - `ha_word_relay.py`
-   - `word_store.py`
-   - `stdict_api.py`
-   - `jev_api.py`
-    - `turso_word_chain/` 폴더 전체
-2. HA Pyscript 환경에 `turso_serverless` 패키지를 설치하고, `.env` 값은 HA 환경변수로 설정합니다.
-3. `pyscript.manage_word_relay` 서비스를 호출할 때 서비스 입력의 **스피커**에서 사용할 미디어 플레이어를 선택합니다. 응답 음성은 `tts.piper`로 재생됩니다.
-4. 먼저 `user_word` 없이 서비스를 호출해 게임을 시작하고, 이후 입력한 단어와 스피커를 전달합니다.
+1. Home Assistant에 Pyscript를 설치하고, Pyscript 설정에서 외부 Python 패키지 import를 허용합니다. YAML 설정을 사용하는 경우 기존 `pyscript:` 항목에 `allow_all_imports: true`를 추가합니다.
+2. HA OS의 Terminal/SSH 애드온 터미널에서 아래 한 줄을 실행합니다. 설치기가 GitHub에서 필요한 파일만 내려받아 `/config/pyscript/`에 설치합니다.
+  ```sh
+  wget -qO /tmp/install-word-game.sh https://raw.githubusercontent.com/collt8080/word-game/master/install-ha.sh && sh /tmp/install-word-game.sh
+  ```
+  설치기는 기존 `.env`를 보존합니다. 파일이 없으면 `.env.example`을 복사하므로 `/config/pyscript/.env`에 Turso와 API 키를 입력합니다. `requirements.txt`의 패키지는 Pyscript가 설치합니다.
+3. Pyscript를 다시 불러오거나 Home Assistant를 재시작합니다. 개발자 도구의 작업에서 `pyscript.manage_word_relay`가 보이는지 확인합니다.
+4. 서비스를 호출할 때 **스피커** 입력에서 미디어 플레이어를 고릅니다. 응답은 `tts.piper`로 재생됩니다. 먼저 `user_word` 없이 호출해 게임을 시작합니다.
    ```yaml
    service: pyscript.manage_word_relay
    data:
