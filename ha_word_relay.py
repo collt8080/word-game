@@ -156,14 +156,17 @@ class TursoWordRelayGame:
         return self._definition_reply(_extract_definition_target(user_input))
 
     def submit(self, user_word):
+        word = normalize_player_word(user_word)
+        if word and any(
+            stop_word in word for stop_word in ("없어", "졌어", "종료", "그만")
+        ):
+            self.active = False
+            return "알겠어요. 게임을 여기서 끝낼게요!", True
+
         definition_word = _extract_definition_word(user_word)
         if definition_word is not None:
             return self._definition_reply(definition_word)
 
-        word = normalize_player_word(user_word)
-        if word and ("없어" in word or "졌어" in word):
-            self.active = False
-            return "알겠어요. 포기한다고 했으니 게임을 끝낼게요. 이번 판은 제가 이겼어요!", True
         if not word:
             definition_reply = self._try_definition_question(user_word)
             if definition_reply is not None:
