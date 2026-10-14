@@ -4,7 +4,7 @@ import re
 from turso_word_chain import KoreanWordChain
 from turso_word_chain.utils import normalize_player_word
 
-from jev_api import JevApiError, is_word_chain_acceptable
+from jev_api import JevApiError, is_definition_question, is_word_chain_acceptable
 from stdict_api import DictionaryApiError, lookup_word
 from word_store import TursoWordStore, dueum_candidates
 
@@ -32,18 +32,46 @@ def _format_chain_error(last_word, word):
 def _extract_definition_word(user_input):
     if not isinstance(user_input, str):
         return None
-    match = re.search(r"무슨\s*(?:말|뜻)", user_input)
-    if not match:
+    if not re.search(r"무슨\s*(?:말|뜻)", user_input):
         return None
-    words = re.findall(r"[가-힣]+", user_input[:match.start()])
-    if not words:
+    return _extract_definition_target(user_input)
+
+
+def _extract_definition_target(user_input):
+    if not isinstance(user_input, str):
         return ""
-    word = words[-1]
-    for particle in ("으로", "에서", "에게", "은", "는", "이", "가", "을", "를", "의", "도"):
-        if word.endswith(particle) and len(word) > len(particle) + 1:
-            word = word[:-len(particle)]
-            break
-    return word if len(word) >= 2 else ""
+    marker = re.search(
+        r"무슨\s*(?:말|뜻|의미|음식|간식|단어)"
+        r"|(?:뭐|무엇|뭔)(?:야|예요|인가요|인지|니|데요|데|가요)?"
+        r"|(?:뜻|의미)(?:이|은|가|을|를)?"
+        r"(?:야|이에요|예요|인지|인가요)?",
+        user_input,
+    )
+    if not marker:
+        return ""
+
+    words = re.findall(r"[가-힣]+", user_input[:marker.start()])
+    particles = ("으로", "에서", "에게", "한테", "라는", "은", "는", "이", "가", "을", "를", "의", "도", "에", "로", "게")
+    ignored_words = {
+        "뜻", "의미", "말", "음식", "간식", "단어",
+        "이거", "그거", "저거", "이것", "그것", "저것",
+        "이게", "그게", "저게", "이건", "그건", "저건",
+    }
+    while words:
+        word = words.pop()
+        while True:
+            for particle in particles:
+                if word.endswith(particle) and len(word) > len(particle):
+                    candidate = word[:-len(particle)]
+                    if len(candidate) >= 2 or candidate in ignored_words:
+                        word = candidate
+                        break
+            else:
+                break
+        if word in ignored_words:
+            continue
+        return word if len(word) >= 2 else ""
+    return ""
 
 
 class TursoWordRelayGame:
@@ -94,36 +122,55 @@ class TursoWordRelayGame:
             return f"{message} 두 번 틀렸어요. 이번엔 제가 이겼어요!", True
         return f"{message} 한 번 틀렸어요. 한 번 더 기회가 있어요.", False
 
+    def _definition_reply(self, definition_word):
+        definition_word = definition_word or self.last_word
+        if not definition_word:
+            return "뜻을 알고 싶은 낱말도 같이 말해 주세요.", False
+        try:
+            definition_entry = lookup_word(definition_word)
+        except DictionaryApiError as error:
+            if "STDICT_API_KEY is not configured" in str(error):
+                return "사전 설정을 찾지 못했어요. 어른에게 알려 주세요.", False
+            return "지금은 사전을 확인할 수 없어요. 잠시 뒤 다시 해봐요.", False
+        if definition_entry is None:
+            return f"국어사전에서 '{definition_word}'의 뜻을 찾지 못했어요.", False
+        return (
+            f"쉽게 말하면, '{definition_entry.word}'의 뜻은 이거예요: "
+            f"{definition_entry.definition}",
+            False,
+        )
+
+    def _try_definition_question(self, user_input):
+        try:
+            if not is_definition_question(user_input):
+                return None
+        except JevApiError:
+            return None
+        return self._definition_reply(_extract_definition_target(user_input))
+
     def submit(self, user_word):
         definition_word = _extract_definition_word(user_word)
         if definition_word is not None:
-            if not definition_word:
-                definition_word = self.last_word
-            if not definition_word:
-                return "뜻을 알고 싶은 낱말도 같이 말해 주세요.", False
-            try:
-                definition_entry = lookup_word(definition_word)
-            except DictionaryApiError as error:
-                if "STDICT_API_KEY is not configured" in str(error):
-                    return "사전 설정을 찾지 못했어요. 어른에게 알려 주세요.", False
-                return "지금은 사전을 확인할 수 없어요. 잠시 뒤 다시 해봐요.", False
-            if definition_entry is None:
-                return f"국어사전에서 '{definition_word}'의 뜻을 찾지 못했어요.", False
-            return (
-                f"쉽게 말하면, '{definition_entry.word}'의 뜻은 이거예요: "
-                f"{definition_entry.definition}",
-                False,
-            )
+            return self._definition_reply(definition_word)
 
         word = normalize_player_word(user_word)
         if word and ("없어" in word or "졌어" in word):
             self.active = False
             return "알겠어요. 포기한다고 했으니 게임을 끝낼게요. 이번 판은 제가 이겼어요!", True
         if not word:
+            definition_reply = self._try_definition_question(user_word)
+            if definition_reply is not None:
+                return definition_reply
             return self._mistake("두 글자 이상인 낱말을 말해 주세요.")
         if not self.relay.can_follow(self.last_word, word):
+            definition_reply = self._try_definition_question(user_word)
+            if definition_reply is not None:
+                return definition_reply
             return self._mistake(_format_chain_error(self.last_word, word))
         if word in self.relay.history:
+            definition_reply = self._try_definition_question(user_word)
+            if definition_reply is not None:
+                return definition_reply
             return self._mistake(f"'{word}'은(는) 아까 나왔어요.")
         dictionary_entry = None
         word_source = "db"

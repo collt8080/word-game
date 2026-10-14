@@ -30,6 +30,43 @@ class JevDecision:
     noun: bool
 
 
+def is_definition_question(utterance, api_key=None):
+    api_key = api_key or os.getenv("JEV_API_KEY")
+    if not api_key:
+        raise JevApiError("JEV_API_KEY is not configured.")
+
+    body = {
+        "state": {
+            "utterance": utterance,
+            "context": "한국어 끝말잇기 중 사용자가 낱말의 뜻이나 정체를 묻는 발화를 했는지 판정합니다.",
+        },
+        "model": "jev-latest",
+        "questions": {
+            "is_definition_question": {
+                "type": "noul",
+                "instructions": "이 발화가 단어 제출이 아니라 어떤 낱말의 뜻, 의미, 정체를 묻는 질문입니까? 예: '탕후루가 뭐야?', '탕후루는 무슨 음식이야?', '탕후루 뜻 알려줘'. 단순히 끝말잇기 낱말을 말한 경우 거짓으로 답하십시오.",
+            },
+        },
+    }
+    request = Request(
+        API_URL,
+        data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=10) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        score = float(payload["answers"]["is_definition_question"]["noul"])
+    except Exception as error:
+        raise JevApiError(f"Jev API definition-question check failed: {error}") from error
+    return score >= 0.5
+
+
 def is_word_chain_acceptable(word, api_key=None):
     api_key = api_key or os.getenv("JEV_API_KEY")
     if not api_key:
