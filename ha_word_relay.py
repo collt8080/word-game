@@ -74,6 +74,17 @@ def _extract_definition_target(user_input):
     return ""
 
 
+def _confirmation_response(user_input):
+    if not isinstance(user_input, str):
+        return None
+    response = re.sub(r"[\W\d_]+", "", user_input)
+    if any(word in response for word in ("아니", "틀렸", "다시")):
+        return False
+    if any(word in response for word in ("맞아", "맞습니다", "그래", "네", "예", "응")):
+        return True
+    return None
+
+
 class TursoWordRelayGame:
     def __init__(self, store=None, start_word=None, difficulty=None):
         self.store = store or TursoWordStore()
@@ -94,6 +105,7 @@ class TursoWordRelayGame:
         self.last_word = ""
         self.active = False
         self.mistakes = 0
+        self.pending_word = None
 
     def set_difficulty(self, difficulty):
         if difficulty not in {"상", "중", "하"}:
@@ -116,6 +128,7 @@ class TursoWordRelayGame:
         self.last_word = selected_start_word
         self.active = True
         self.mistakes = 0
+        self.pending_word = None
         return (
             f"끝말잇기 시작해요! 제가 먼저 '{selected_start_word}'라고 했어요. "
             f"이제 '{selected_start_word[-1]}'로 시작하는 낱말을 말해 주세요!"
@@ -163,6 +176,20 @@ class TursoWordRelayGame:
             self.active = False
             return "알겠어요. 게임을 여기서 끝낼게요!", True
 
+        if self.pending_word is not None:
+            definition_word = _extract_definition_word(user_word)
+            if definition_word is not None:
+                return self._definition_reply(definition_word)
+            confirmation = _confirmation_response(user_word)
+            if confirmation is True:
+                pending_word = self.pending_word
+                self.pending_word = None
+                return self._mistake(_format_chain_error(self.last_word, pending_word))
+            if confirmation is False:
+                self.pending_word = None
+                return "알겠어요. 다시 말씀해 주세요.", False
+            self.pending_word = None
+
         definition_word = _extract_definition_word(user_word)
         if definition_word is not None:
             return self._definition_reply(definition_word)
@@ -176,7 +203,8 @@ class TursoWordRelayGame:
             definition_reply = self._try_definition_question(user_word)
             if definition_reply is not None:
                 return definition_reply
-            return self._mistake(_format_chain_error(self.last_word, word))
+            self.pending_word = word
+            return f"'{word}'라고 들었어요. 이 단어가 맞아요?", False
         if word in self.relay.history:
             definition_reply = self._try_definition_question(user_word)
             if definition_reply is not None:
