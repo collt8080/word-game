@@ -227,13 +227,13 @@ def _local_service(function):
 service = globals().get("service", _local_service)
 
 
-def _speak(message):
+def _speak(message, speaker):
     ha_tts = globals().get("tts")
     if ha_tts is None:
         raise RuntimeError("TTS is only available inside Home Assistant.")
     ha_tts.speak(
         entity_id="tts.piper",
-        media_player_entity_id="media_player.your_speaker",
+        media_player_entity_id=speaker,
         message=message,
     )
 
@@ -243,7 +243,35 @@ if "_word_relay_game" not in globals():
 
 
 @service
-def manage_word_relay(user_word=None, difficulty=None):
+def manage_word_relay(user_word=None, difficulty=None, speaker=None):
+    """yaml
+        name: 한국어 끝말잇기
+        description: 끝말잇기를 시작하거나 낱말을 제출하고 선택한 스피커로 답을 들려줍니다.
+        fields:
+            user_word:
+                name: 입력 낱말
+                description: 비워 두면 새 게임을 시작합니다.
+                required: false
+                selector:
+                    text:
+            difficulty:
+                name: 난이도
+                required: false
+                selector:
+                    select:
+                        options:
+                            - 상
+                            - 중
+                            - 하
+            speaker:
+                name: 스피커
+                description: Piper 음성을 재생할 미디어 플레이어를 선택합니다.
+                required: true
+                selector:
+                    entity:
+                        filter:
+                            - domain: media_player
+    """
     global _word_relay_game
     if _word_relay_game is None:
         _word_relay_game = TursoWordRelayGame(difficulty=difficulty)
@@ -253,7 +281,7 @@ def manage_word_relay(user_word=None, difficulty=None):
         message = _word_relay_game.start()
     else:
         message, _ = _word_relay_game.submit(user_word)
-    _speak(message)
+    _speak(message, speaker)
 
 
 def run_local_game():

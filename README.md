@@ -77,20 +77,20 @@ python .\ha_word_relay.py
    - `jev_api.py`
     - `turso_word_chain/` 폴더 전체
 2. HA Pyscript 환경에 `turso_serverless` 패키지를 설치하고, `.env` 값은 HA 환경변수로 설정합니다.
-3. `ha_word_relay.py` 상단의 TTS 엔진 및 스피커 엔티티 ID를 본인 환경에 맞게 수정합니다:
-   - `entity_id="tts.piper"`
-   - `media_player_entity_id="media_player.your_speaker"`
-4. 먼저 `user_word` 없이 서비스를 호출해 게임을 시작하고, 이후 입력한 단어를 전달합니다.
+3. `pyscript.manage_word_relay` 서비스를 호출할 때 서비스 입력의 **스피커**에서 사용할 미디어 플레이어를 선택합니다. 응답 음성은 `tts.piper`로 재생됩니다.
+4. 먼저 `user_word` 없이 서비스를 호출해 게임을 시작하고, 이후 입력한 단어와 스피커를 전달합니다.
    ```yaml
    service: pyscript.manage_word_relay
    data:
      difficulty: "중" # 생략 시 .env 기본값 사용
+     speaker: media_player.living_room
    ```
    게임이 시작된 뒤에는 다음처럼 입력을 보냅니다:
    ```yaml
    service: pyscript.manage_word_relay
    data:
      user_word: "과일"
+     speaker: media_player.living_room
    ```
 
 ---
