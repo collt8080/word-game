@@ -79,6 +79,12 @@ class TursoWordRelayGame:
         self.store = store or TursoWordStore()
         self.store.initialize()
         self.difficulty = difficulty or os.getenv("WORD_GAME_DIFFICULTY", "하")
+        try:
+            self.max_mistakes = int(os.getenv("WORD_GAME_MAX_MISTAKES", "2").strip())
+        except ValueError as error:
+            raise ValueError("WORD_GAME_MAX_MISTAKES must be a non-negative integer.") from error
+        if self.max_mistakes < 0:
+            raise ValueError("WORD_GAME_MAX_MISTAKES must be a non-negative integer.")
         self.relay = KoreanWordChain(
             word_store=self.store,
             use_dueum=True,
@@ -116,11 +122,12 @@ class TursoWordRelayGame:
         )
 
     def _mistake(self, message):
-        self.mistakes += 1
-        if self.mistakes >= 2:
+        if self.max_mistakes > 0:
+            self.mistakes += 1
+        if self.max_mistakes > 0 and self.mistakes >= self.max_mistakes:
             self.active = False
-            return f"{message} 두 번 틀렸어요. 이번엔 제가 이겼어요!", True
-        return f"{message} 한 번 틀렸어요. 한 번 더 기회가 있어요.", False
+            return f"{message} 이번 판은 제가 이겼어요!", True
+        return f"{message} 다시 말씀해 주세요.", False
 
     def _definition_reply(self, definition_word):
         definition_word = definition_word or self.last_word

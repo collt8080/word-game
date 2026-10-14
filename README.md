@@ -19,7 +19,7 @@ Home Assistant(Pyscript) 음성 게임과 로컬 터미널 테스트를 모두 �
   - **비속어는 무조건 차단**
   - **방언은 옵션(`ALLOW_DIALECT_WORDS`)으로 게임 사용 여부를 제어**하지만, 방언은 DB에 저장하지 않음
   - **DB에는 명사만 등록**: Jev 승인 단어도 명사 판정을 통과해야 저장하며, 시작 단어는 기존 DB에서만 선택
-- **2회 기회 규칙**: 한 턴에 한 번 틀리면 다시 기회를 주고, 정상적으로 턴이 넘어가면 실수 횟수를 초기화합니다. 같은 턴에서 두 번 틀리면 패배합니다.
+- **오답 횟수 설정**: `WORD_GAME_MAX_MISTAKES`로 패배까지 허용할 오답 횟수를 정합니다. 기본값은 2이며, `0`이면 오답 횟수와 관계없이 게임이 끝나지 않습니다. 오답 횟수는 말하지 않고 다시 답해 달라고 안내합니다.
 - **등록 출처별 안내**: DB 단어, 표준국어대사전 확인 단어, Jev AI 승인 단어에 서로 다른 짧은 응답을 합니다.
 - **뜻 질문**: `무슨 말`, `무슨 뜻`, `뭐야?` 같은 표현으로 국어사전 뜻을 물을 수 있습니다. 틀린 입력도 Jev가 뜻 질문인지 확인하며, 질문이면 단어를 찾아 답하고 게임 턴은 유지됩니다.
 
@@ -41,6 +41,7 @@ TURSO_AUTH_TOKEN=your-turso-token
 
 # 게임 기본 난이도 (상 / 중 / 하, 기본값: 하)
 WORD_GAME_DIFFICULTY=하
+WORD_GAME_MAX_MISTAKES=2
 
 # 국립국어원 표준국어대사전 Open API 키 (선택/권장)
 STDICT_API_KEY=your-stdict-api-key
@@ -54,6 +55,7 @@ STORE_JEV_APPROVED_WORDS=false
 ```
 
 `JEV_ACCEPT_THRESHOLD`는 미등재 단어 허용 점수 기준(0~1)이며 기본값은 0.58입니다.
+`WORD_GAME_MAX_MISTAKES`는 패배까지 허용할 오답 횟수이며 기본값은 2, `0`은 무제한입니다.
 `STORE_JEV_APPROVED_WORDS`가 `false`이면 Jev가 허용한 단어도 DB에 저장하지 않습니다.
 
 `pyproject.toml`은 Python 패키지 빌드/설치용 설정입니다. Home Assistant Pyscript는 wheel 설치만으로 서비스를 등록하지 않으므로, 아래 소스 파일을 Pyscript 스크립트 폴더에 배치해야 합니다.
